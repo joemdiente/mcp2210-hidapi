@@ -33,7 +33,7 @@ build: update_dependency
 	gcc -g  ./*.o -L./${OS_ARCH}/ -lhidapi -o ${OUTPUT}.exe 
 # Clean: (-) makes sures that even with error next recipe will be executed.
 clean:
-	-rm *.exe *.o	
+	-rm *.exe *.o *.dll	
 
 run: build
 	.\${OUTPUT}.exe 
