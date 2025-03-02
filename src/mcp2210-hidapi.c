@@ -5,7 +5,7 @@
  * 
  */
 
-#include "include/hidapi.h"
+#include "hidapi.h"
 #include "hidapi_winapi.h"
 
 #include "mcp2210-hidapi.h"

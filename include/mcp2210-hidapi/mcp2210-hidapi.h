@@ -7,8 +7,10 @@
 #ifndef MCP2210_HIDAPI
 #define MCP2210_HIDAPI
 
-#include "include/hidapi.h"
+/* HIDAPI Headers */
+#include "../hidapi/hidapi.h"
 
+/* MCP2210-HIDAPI Headers */
 #include "mcp2210-hidapi-misc.h"
 #include <stdio.h> // printf
 

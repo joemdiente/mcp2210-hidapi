@@ -1,4 +1,4 @@
-#include "include/hidapi.h"
+#include "hidapi.h"
 
 #include <stdio.h> // printf
 #include <wchar.h> // wchar_t
