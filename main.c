@@ -1,3 +1,4 @@
+#include "include/hidapi.h"
 #include <stdio.h> // printf
 #include <wchar.h> // wchar_t
 
@@ -12,8 +13,153 @@
 #define MAX_STR 255
 
 // Debug
-#define PRINT_BUF_RANGE(x,y) 	{for (i = x; i <= y; i++) printf("buf[%d]: %X\n", i, buf[i]);}
+#define DEBUG_MCP2210 1
+#if (DEBUG_MCP2210 == 1)
+#define PRINT_BUF_RANGE(x,y) 	{ if (buf == NULL) {} else {int i = 0; for (i = x; i <= y; i++) printf("buf[%d]: %X\n", i, buf[i]);} }
+#define PRINT_RES(y,z) 	{ printf("[%s] %s: %X\r\n", __FUNCTION__, y, z); }
+#else 
+#define PRINT_BUF_RANGE(x,y)
+#define PRINT_RES(x)
+#endif
 
+/*
+ * GPIO related Functions
+ */
+typedef enum {
+	GP_FUNC_GPIO = 0x0,
+	GP_FUNC_CHIP_SELECTS = 0x1,
+	GP_FUNC_DEDICATED_FUNCTION_PIN = 0x02
+} mcp2210_gp_pin_designation_t ;
+
+
+int mcp2210_get_gpio_val(hid_device *handle, int gpio, int *val) {
+	int res = -1;
+	unsigned char buf[65];
+
+	if (val == NULL) return -1;
+
+	buf[0] = 0x00;
+	buf[1] = 0x31; //Set Current Chip Settings
+
+	//HID API
+	if (hid_write(handle, buf, 65) == -1) {
+		PRINT_RES("write failed", res);
+		return -1;
+	}
+	if (hid_read(handle, buf, 65) == -1) {
+		PRINT_RES("read failed", res);
+		return -1;
+	}
+	// PRINT_BUF_RANGE(0,64);
+	if (buf[1] != 0x00){
+		PRINT_RES("command unsucessful", buf[2]);
+		return -1;
+	}
+
+	// Store to val from Response
+	*val = buf[4];
+
+	return 0;
+}
+int mcp2210_set_gpio_direction(hid_device *handle, int gpio, int dir) {
+	int res = -1;
+	unsigned char buf[65];
+	
+	buf[0] = 0x00;
+	buf[1] = 0x32; // Set (VM) GPIO Current Pin Direction
+
+	if (gpio > 7 || dir > 1) {
+		printf("[%s] invalid gpio/dir %u/%u \r\n", __FUNCTION__, gpio, dir);
+	}
+	buf[5] = 0x00 | (dir << gpio);
+
+	//HID API
+	if (hid_write(handle, buf, 65) == -1) {
+		PRINT_RES("write failed", res);
+		return -1;
+	}
+	// PRINT_BUF_RANGE(0,64);
+	if (hid_read(handle, buf, 65) == -1) {
+		PRINT_RES("read failed", res);
+		return -1;
+	}
+	// PRINT_BUF_RANGE(0,64);
+	if (buf[1] != 0x00){
+		PRINT_RES("command unsucessful", buf[2]);
+		return -1;
+	}
+
+	return 0;
+}
+int mcp2210_set_gpio_function(hid_device *handle, int gpio, mcp2210_gp_pin_designation_t func) {
+	int res = -1;
+	unsigned char buf[65];
+
+	buf[0] = 0x00;
+	buf[1] = 0x21; //Set Current Chip Settings
+	
+	switch(gpio) {
+		case 0:
+			buf[5] = func;
+			break;
+		case 1:
+			buf[6] = func;
+			break;
+		case 2:
+			buf[7] = func;
+			break;
+		case 3:
+			buf[8] = func;
+			break;
+		case 4:
+			buf[9] = func;
+			break;
+		case 5:
+			buf[10] = func;
+			break;
+		case 6:
+			buf[11] = func;
+			break;
+		case 7:
+			buf[12] = func;
+			break;
+		case 8:
+			if (func == 0x1) {
+				printf("[%s] %i function is not supported\r\n",__FUNCTION__, func);
+				return res = -1;
+			}
+			buf[13] = func;
+			break;
+		default:
+			printf("[%s] %u is not a valid gpio\r\n", __FUNCTION__, gpio);
+			return res = -1;
+			break;
+	}
+	// Set GPIO Default Output to Low For Now
+	buf[14] = 0x00;
+
+	//HID API
+	if (hid_write(handle, buf, 65) == -1) {
+		PRINT_RES("write failed", res);
+		return -1;
+	}
+	// PRINT_BUF_RANGE(0,64);
+	if (hid_read(handle, buf, 65) == -1) {
+		PRINT_RES("read failed", res);
+		return -1;
+	}
+	// PRINT_BUF_RANGE(0,64);
+	if (buf[1] != 0x00){
+		PRINT_RES("command unsucessful", buf[2]);
+		return -1;
+	}
+
+	return 0;
+}
+
+/*
+ * USB related Functions
+ */
 int mcp2210_get_usb_manufacturer(hid_device *handle) {
 	int i;
 	int res = -1;
@@ -30,12 +176,13 @@ int mcp2210_get_usb_manufacturer(hid_device *handle) {
 	// Read RESPONSE Structure 
 	res = hid_read(handle, buf, 65);
 	// Print out RESPONSE Structure.
-	for (i = 0; i < 64; i++)
-		printf("buf[%d]: %X\n", i, buf[i]);
+	// PRINT_BUF_RANGE(0,64);
 		
 	return res;
 }
-
+/*
+ * SPI related Functions
+ */
 int mcp2210_get_spi_transfer_settings(hid_device *handle) {
 	int i;
 	int res = -1;
@@ -94,7 +241,7 @@ int mcp2210_get_spi_transfer_settings(hid_device *handle) {
 	printf("Bytes to Transfer per SPI Transaction: %X\r\n", bytes_per_transfer);
 
 	// SPI Mode
-	printf("SPI Mode: 0x%X", buf[20]);
+	printf("SPI Mode: 0x%X \r\n", buf[20]);
 	return res;
 }
 
@@ -134,8 +281,25 @@ int main(int argc, char* argv[]) {
 	printf("Indexed String 1: %ls\n", wstr);
 
 	// Examples
-	mcp2210_get_usb_manufacturer(handle);
-	mcp2210_get_spi_transfer_settings(handle);
+	{
+		printf("Running Examples \r\n");
+		mcp2210_get_usb_manufacturer(handle);
+		mcp2210_get_spi_transfer_settings(handle);
+
+		//GPIO Example
+		mcp2210_set_gpio_function(handle, 6, GP_FUNC_GPIO);
+		mcp2210_set_gpio_direction(handle, 6, 1);
+
+		int i = 0;
+		int val = 0xFF;
+		while(1) {
+			if (mcp2210_get_gpio_val(handle, 6, &val)) {
+				printf("get gpio val failed \r\n");
+			}
+			
+			printf("GP6 Val: %X \r\n", val);
+		}
+	}
 
 	// Close the device
 	hid_close(handle);
@@ -145,4 +309,3 @@ int main(int argc, char* argv[]) {
 
 	return 0;
 }
-
