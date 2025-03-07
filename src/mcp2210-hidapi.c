@@ -9,7 +9,7 @@
 #include "mcp2210-hidapi.h"
 
 /* 
- * Required Configuration:
+ * Required User Configuration:
  * Define "WINDOWS" or "LINUX" (tbd)
  * Define DEBUG_xxx
  * 
@@ -20,7 +20,7 @@
 #define DEBUG_MCP2210 1
 #define DEBUG_MCP2210_SHOW_FUNCTION
 
-/* End of Configuration */
+/* End of User Configuration */
 
 /* Check Operating System */
 #ifdef WINDOWS
