@@ -1,5 +1,5 @@
 /* 
-* MCP2210 C code using HIDAPI
+* MCP2210 C code using HIDAPI Header
 *
 * Author: Joemel John Diente <joemdiente@gmail.com>
 * 
@@ -23,9 +23,10 @@ typedef enum {
 	GP_FUNC_DEDICATED_FUNCTION_PIN = 0x02
 } mcp2210_gp_pin_designation_t ;
 
-int mcp2210_get_gpio_val(hid_device *handle, int gpio, int *val);
-int mcp2210_set_gpio_direction(hid_device *handle, int gpio, int dir);
-int mcp2210_set_gpio_function(hid_device *handle, int gpio, mcp2210_gp_pin_designation_t func);
+int mcp2210_set_gpio_val(hid_device *handle, uint8_t val);
+int mcp2210_get_gpio_val(hid_device *handle, uint8_t *val);
+int mcp2210_set_gpio_direction(hid_device *handle, uint8_t gpio, uint8_t dir);
+int mcp2210_set_gpio_function(hid_device *handle, uint8_t gpio, mcp2210_gp_pin_designation_t func);
 
 /*
 * USB related Functions

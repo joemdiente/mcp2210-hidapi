@@ -48,23 +48,43 @@ int main(int argc, char* argv[]) {
 	// Examples
 	{
 		printf("Running Examples \r\n");
+		int i = 0;
+		uint8_t val = 0xFF;
+
 		mcp2210_get_usb_manufacturer(handle);
 		mcp2210_get_spi_transfer_settings(handle);
 
-		//GPIO Example
-		mcp2210_set_gpio_function(handle, 6, GP_FUNC_GPIO);
-		mcp2210_set_gpio_direction(handle, 6, 1);
+		/* GPIO Example
+		 * Set all GP to GPIOS
+		 * Set all GP to Output except GP5
+		 */
+		for (i = 0; i < 7; i++) {
+			mcp2210_set_gpio_function(handle, i, GP_FUNC_GPIO);
+			mcp2210_set_gpio_direction(handle, i, 0);				//Output
+			if (i == 5) mcp2210_set_gpio_direction(handle, 5, 1);	//Input
+		}
 
-		int i = 0;
-		int val = 0xFF;
-		while(1) {
-			if (mcp2210_get_gpio_val(handle, 6, &val)) {
+		// Set GPIOs Output Value
+		mcp2210_set_gpio_val(handle, 0xA5);
+
+		// Read Back (Expected Output: 0x84 if GP5 is High)
+		// while(1) {
+		for (i = 0; i < 3; i++) {
+			if (mcp2210_get_gpio_val(handle, &val)) {
 				printf("get gpio val failed \r\n");
 			}
 			
-			printf("GP6 Val: %X \r\n", val);
+			printf("GPIOs (GP7:GP0) Val: %X \r\n", val);
 		}
-	}
+
+		// Change GP0:3 5 times with 500ms and 250ms high-low.
+		for (i = 0; i < 5; i ++) {
+			mcp2210_set_gpio_val(handle, 0x55);
+		}
+
+		// SPI Example
+		
+	} // Examples
 
 	// Close the device
 	hid_close(handle);

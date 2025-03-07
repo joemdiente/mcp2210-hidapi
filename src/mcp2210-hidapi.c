@@ -1,5 +1,5 @@
 /* 
- * MCP2210 C code using HIDAPI
+ * MCP2210 C code using HIDAPI Source
  *
  * Author: Joemel John Diente <joemdiente@gmail.com>
  * 
@@ -29,14 +29,14 @@
 static unsigned char buf[65];
 
  /*
- * GPIO related Functions
+ * GPIO GET related Functions
  */
-int mcp2210_get_gpio_val(hid_device *handle, int gpio, int *val) {
+int mcp2210_get_gpio_val(hid_device *handle, uint8_t *val) {
 	int res = -1;
 	if (val == NULL) return -1;
 
 	buf[0] = 0x00;
-	buf[1] = 0x31; //Set Current Chip Settings
+	buf[1] = 0x31; //Get (VM) GPIO Current Pin Value
 
 	//HID API
 	if (hid_write(handle, buf, 65) == -1) {
@@ -58,7 +58,33 @@ int mcp2210_get_gpio_val(hid_device *handle, int gpio, int *val) {
 
 	return 0;
 }
-int mcp2210_set_gpio_direction(hid_device *handle, int gpio, int dir) {
+ /*
+ * GPIO SET related Functions
+ */
+int mcp2210_set_gpio_val(hid_device *handle, uint8_t val) {
+	int res = -1;
+	
+	buf[0] = 0x00;
+	buf[1] = 0x30; //Set (VM) GPIO Current Pin Value
+	buf[5] = val;
+
+	//HID API
+	if (hid_write(handle, buf, 65) == -1) {
+		PRINT_RES("write failed", res);
+		return -1;
+	}
+	if (hid_read(handle, buf, 65) == -1) {
+		PRINT_RES("read failed", res);
+		return -1;
+	}
+	// PRINT_BUF_RANGE(0,64);
+	if (buf[1] != 0x00){
+		PRINT_RES("command unsucessful", buf[2]);
+		return -1;
+	}
+	return 0;
+}
+int mcp2210_set_gpio_direction(hid_device *handle, uint8_t gpio, uint8_t dir) {
 	int res = -1;
 	
 	buf[0] = 0x00;
@@ -87,7 +113,7 @@ int mcp2210_set_gpio_direction(hid_device *handle, int gpio, int dir) {
 
 	return 0;
 }
-int mcp2210_set_gpio_function(hid_device *handle, int gpio, mcp2210_gp_pin_designation_t func) {
+int mcp2210_set_gpio_function(hid_device *handle, uint8_t gpio, mcp2210_gp_pin_designation_t func) {
 	int res = -1;
 
 	buf[0] = 0x00;
@@ -151,6 +177,7 @@ int mcp2210_set_gpio_function(hid_device *handle, int gpio, mcp2210_gp_pin_desig
 
 	return 0;
 }
+/* END OF GPIO RELATED FUNCTIONS */
 
 /*
  * USB related Functions
@@ -174,6 +201,8 @@ int mcp2210_get_usb_manufacturer(hid_device *handle) {
 		
 	return res;
 }
+/* END OF USB RELATED FUNCTIONS */
+
 /*
  * SPI related Functions
  */
@@ -237,3 +266,4 @@ int mcp2210_get_spi_transfer_settings(hid_device *handle) {
 	printf("SPI Mode: 0x%X \r\n", buf[20]);
 	return res;
 }
+/* END OF SPI RELATED FUNCTIONS */
