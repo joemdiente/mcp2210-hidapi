@@ -6,24 +6,41 @@
  */
 
 #include "hidapi.h"
-#include "hidapi_winapi.h"
-
 #include "mcp2210-hidapi.h"
 
-// Check OS
+/* 
+ * Required Configuration:
+ * Define "WINDOWS" or "LINUX" (tbd)
+ * Define DEBUG_xxx
+ * 
+ */
 #define WINDOWS
+
+// Debug
+#define DEBUG_MCP2210 1
+#define DEBUG_MCP2210_SHOW_FUNCTION
+
+/* End of Configuration */
+
+/* Check Operating System */
 #ifdef WINDOWS
+#include "hidapi_winapi.h"
 #include <Windows.h>
 #elif (LINUX)
-
+//To be defined.
 #endif 
 
+/* Debug utilities */
 #if (DEBUG_MCP2210 == 1)
 #define PRINT_BUF_RANGE(x,y) 	{ if (buf == NULL) {} else {int i = 0; for (i = x; i <= y; i++) printf("buf[%d]: %X\n", i, buf[i]);} }
 #define PRINT_RES(y,z) 	{ printf("[%s] %s: %X\r\n", __FUNCTION__, y, z); }
+#ifdef (DEBUG_MCP2210_SHOW_FUNCTION)
+#define PRINT_FUN() { printf("[Entered %s] \r\n", __FUNCTION__); }
+#endif
 #else 
 #define PRINT_BUF_RANGE(x,y) {}
 #define PRINT_RES(y,z) {}
+#define PRINT_FUN() {}
 #endif
 
 static unsigned char buf[65];
@@ -34,6 +51,8 @@ static unsigned char buf[65];
 int mcp2210_get_gpio_val(hid_device *handle, uint8_t *val) {
 	int res = -1;
 	if (val == NULL) return -1;
+
+	PRINT_FUN();
 
 	buf[0] = 0x00;
 	buf[1] = 0x31; //Get (VM) GPIO Current Pin Value
@@ -63,7 +82,9 @@ int mcp2210_get_gpio_val(hid_device *handle, uint8_t *val) {
  */
 int mcp2210_set_gpio_val(hid_device *handle, uint8_t val) {
 	int res = -1;
-	
+		
+	PRINT_FUN();
+
 	buf[0] = 0x00;
 	buf[1] = 0x30; //Set (VM) GPIO Current Pin Value
 	buf[5] = val;
@@ -86,7 +107,9 @@ int mcp2210_set_gpio_val(hid_device *handle, uint8_t val) {
 }
 int mcp2210_set_gpio_direction(hid_device *handle, uint8_t gpio, uint8_t dir) {
 	int res = -1;
-	
+		
+	PRINT_FUN();
+		
 	buf[0] = 0x00;
 	buf[1] = 0x32; // Set (VM) GPIO Current Pin Direction
 
@@ -115,7 +138,9 @@ int mcp2210_set_gpio_direction(hid_device *handle, uint8_t gpio, uint8_t dir) {
 }
 int mcp2210_set_gpio_function(hid_device *handle, uint8_t gpio, mcp2210_gp_pin_designation_t func) {
 	int res = -1;
-
+		
+	PRINT_FUN();
+	
 	buf[0] = 0x00;
 	buf[1] = 0x21; //Set Current Chip Settings
 	
@@ -185,6 +210,8 @@ int mcp2210_set_gpio_function(hid_device *handle, uint8_t gpio, mcp2210_gp_pin_d
 int mcp2210_get_usb_manufacturer(hid_device *handle) {
 	int i;
 	int res = -1;
+		
+	PRINT_FUN();
 	
 	// 3.1.9 GET USB MANUFACTURER NAME (Page 30)
 	
@@ -209,7 +236,9 @@ int mcp2210_get_usb_manufacturer(hid_device *handle) {
 int mcp2210_get_spi_transfer_settings(hid_device *handle) {
 	int i;
 	int res = -1;
-
+		
+	PRINT_FUN();
+	
 	//3.2.1 GET (VM) SPI TRANSFER SETTINGS (Page 34)
 	// COMMAND Structure 
 	buf[0] = 0x00;

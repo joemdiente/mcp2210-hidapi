@@ -5,7 +5,6 @@
 
 #define MAX_STR 255
 
-#define DEBUG_MCP2210 1
 #include "mcp2210-hidapi.h"
 
 // Debug
