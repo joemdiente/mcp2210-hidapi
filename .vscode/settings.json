@@ -4,6 +4,7 @@
         "hidapi_winapi.h": "c",
         "stdio.h": "c",
         "hidapi.h": "c",
-        "mcp2210-hidapi-misc.h": "c"
+        "mcp2210-hidapi-misc.h": "c",
+        "mcp2210-hidapi-gpio.h": "c"
     }
 }

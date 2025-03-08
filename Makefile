@@ -10,6 +10,8 @@ ARCH=AMD64
 
 # Do not modify
 MY_FILE:=hidapi.dll
+INCLUDE:=./include/mcp2210-hidapi/
+INCLUDE_HIDAPI:=./include/hidapi/
 
 # Check OS and ARCH then automatically set vars
 ifeq ($(OS), WINDOWS_NT) #Windows
@@ -26,14 +28,16 @@ endif
 all: clean | build 
 
 # Build: checks for OS dependencies before building. (For now all is built with -g)
-build: update_dependency
-	gcc -g -c ./src/mcp2210-hidapi-misc.c  -I./include/mcp2210-hidapi/
-	gcc -g -c ./src/mcp2210-hidapi.c  -I./include/mcp2210-hidapi/ -I./include/hidapi/
-	gcc -g -c ./main.c -I./include/hidapi/ -I./include/mcp2210-hidapi/
+build: update_dependency | clean
+	gcc -g -c ./src/mcp2210-hidapi.c  -I${INCLUDE} -I${INCLUDE_HIDAPI}
+	gcc -g -c ./src/mcp2210-hidapi-gpio.c  -I${INCLUDE} -I${INCLUDE_HIDAPI}
+	gcc -g -c ./src/mcp2210-hidapi-spi.c -I${INCLUDE} -I${INCLUDE_HIDAPI}
+	gcc -g -c ./src/mcp2210-hidapi-misc.c  -I${INCLUDE} -I${INCLUDE_HIDAPI}
+	gcc -g -c ./main.c -I./include/hidapi/ -I${INCLUDE} -I${INCLUDE_HIDAPI}
 	gcc -g  ./*.o -L./${OS_ARCH}/ -lhidapi -o ${OUTPUT}.exe 
 # Clean: (-) makes sures that even with error next recipe will be executed.
 clean:
-	-rm *.exe *.o *.dll	
+	-rm *.exe *.o
 
 run: build
 	.\${OUTPUT}.exe 
