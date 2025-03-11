@@ -21,13 +21,27 @@ uint32_t combine_uint8_to_uint32_le(uint8_t byte0, uint8_t byte1, uint8_t byte2,
 }
 
 //le means little-endian
-uint16_t combine_uint8_to_uint16_le(uint8_t low_byte, uint8_t high_byte) {
+uint16_t combine_uint8_to_uint16_le(uint8_t byte0, uint8_t byte1) {
 	uint16_t result = 0;
 
 	// Combine the bytes in little-endian order
-	result = (uint16_t)low_byte | ((uint16_t)high_byte << 8);
+	result = (uint16_t)byte0 | ((uint16_t)byte1 << 8);
 
 	return result;
+}
+
+// Inverse of combine_uint8_to_uint32_le
+void split_uint32_to_uint8_le(uint32_t value, uint8_t* byte0, uint8_t* byte1, uint8_t* byte2, uint8_t* byte3) {
+    *byte0 = (uint8_t)(value >> 24);
+    *byte1 = (uint8_t)(value >> 16);
+    *byte2 = (uint8_t)(value >> 8);
+    *byte3 = (uint8_t)(value);
+}
+
+// Inverse of combine_uint8_to_uint16_le
+void split_uint16_to_uint8_le(uint16_t value, uint8_t*byte0, uint8_t* byte1) {
+    *byte0 = (uint8_t)(value);
+    *byte1 = (uint8_t)(value >> 8);
 }
 
 //nl means newline

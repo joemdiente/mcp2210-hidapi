@@ -29,13 +29,14 @@
 #ifdef WINDOWS
 #include "hidapi_winapi.h"
 #include <Windows.h>
+#include <errno.h>      // Use errno.h
 #elif (LINUX)
 //To be defined.
 #endif 
 
 /* Debug utilities */
 #if (DEBUG_MCP2210 == 1) // debug mcp2210
-#define PRINT_BUF_RANGE(x,y) 	{ if (buf == NULL) {} else {int i = 0; for (i = x; i <= y; i++) printf("buf[%d]: %X\n", i, buf[i]);} }
+#define PRINT_BUF_RANGE(x,y,z) 	{ if (x == NULL) {printf("invalid buffer\r\n");} else {int i = 0; for (i = y; i <= z; i++) printf("buffer[%d]: %X\n", i, x[i]);} }
 #define PRINT_RES(y,z) 	{ printf("[%s] %s: %X\r\n", __FUNCTION__, y, z); }
 
 #ifdef DEBUG_MCP2210_SHOW_FUNCTION
@@ -51,6 +52,8 @@
 
 // Main Buffer
 static unsigned char buf[65];
+static unsigned char cmd_buf[65];
+static unsigned char rsp_buf[65];
 
 // Functions
 #include "mcp2210-hidapi-gpio.h"
@@ -61,6 +64,5 @@ static unsigned char buf[65];
 * USB related Functions
 */
 int mcp2210_get_usb_manufacturer(hid_device *handle);
-
 
 #endif /* MCP2210_HIDAPI */

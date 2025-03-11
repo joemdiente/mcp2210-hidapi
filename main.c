@@ -47,58 +47,9 @@ int main(int argc, char* argv[]) {
 	printf("Indexed String 1: %ls\n", wstr);
 
 	// Examples
-	{
-		printf("Running Examples \r\n");
-		// uint8_t i = 0;
-		// uint8_t val = 0xFF;
-		// mcp2210_gp_pin_designation_t func = 0;
-
-		// mcp2210_get_usb_manufacturer(handle);
-		// mcp2210_get_spi_transfer_settings(handle);
-
-		// /* GPIO Example
-		//  * Set all GP to GPIOS
-		//  * Set all GP to Output except GP5
-		//  */
-		// for (i = 0; i < 7; i++) {
-		// 	mcp2210_set_gpio_function(handle, i, GP_FUNC_GPIO);
-		// 	mcp2210_set_gpio_direction(handle, i, 0);				//Output
-		// }
-		// for (i = 0; i < 7; i++) {
-		// 	mcp2210_get_gpio_function(handle, i, &func);
-		// 	printf("gpio %u func 0x%X\r\n", i, func);
-		// 	// mcp2210_get_gpio_direction(handle, i, &dir);			//Output
-		// }
-		
-		// // Set GPIOs Output Value
-		// mcp2210_set_gpio_val(handle, 0xA5);
-
-		// // Read Back
-		// // while(1) {
-		// for (i = 0; i < 3; i++) {
-		// 	if (mcp2210_get_gpio_val(handle, &val)) {
-		// 		printf("get gpio val failed \r\n");
-		// 	}
-			
-		// 	printf("GPIOs (GP7:GP0) Val: %X \r\n", val);
-		// }
-
-		// // Change GP[3:0] 5 times with 500ms and 750ms high-low.
-		// mcp2210_set_gpio_val(handle, 0x55); // Start Val
-		// Sleep(1000); // 1 second
-		// for (i = 0; i < 5; i ++) {
-		// 	mcp2210_set_gpio_val(handle, 0x05);
-		// 	Sleep(500);
-		// 	mcp2210_set_gpio_val(handle, 0x0A);
-		// 	Sleep(750);
-		// }
-
-		// SPI Example
-		mcp2210_set_gpio_function(handle, 0, GP_FUNC_CHIP_SELECTS);
-		mcp2210_set_gpio_direction(handle, 0, GP_DIR_OUT);	//CS
-
-		
-
+	{	
+		spi_get_examples(handle);
+		spi_set_examples(handle);
 	} // Examples
 
 	// Close the device
