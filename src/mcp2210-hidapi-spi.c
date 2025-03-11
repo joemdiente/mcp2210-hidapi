@@ -4,6 +4,7 @@
  * Author: Joemel John Diente <joemdiente@gmail.com>
  * 
  */
+
 #include "mcp2210-hidapi-spi.h"
 
 /*
@@ -33,6 +34,7 @@ int mcp2210_spi_get_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 	if (rsp_buf[1] != 0x00) {
 		res = -EBUSY;
 		PRINT_RES("Command Completed Unsucessfully", res);
+		return res;
 	} 
 
 	cfg->transfer_size = rsp_buf[2];
@@ -80,8 +82,8 @@ int mcp2210_spi_set_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 	if (rsp_buf[1] != 0x00) {
 		res = -EBUSY;
 		PRINT_RES("Command Completed Unsucessfully", res);
+		return res;
 	} 
-
 
 	return 0;
 }

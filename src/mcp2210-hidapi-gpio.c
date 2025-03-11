@@ -8,220 +8,108 @@
 #include "mcp2210-hidapi-gpio.h"
 
  /*
-  * Current Chip Settings
+  *  GPIO Current Chip Settings
   */
-int mcp2210_get_current_chip_settings(hid_device *handle, uint8_t *val) {
+int mcp2210_gpio_get_current_chip_settings(hid_device *handle, mcp2210_gpio_chip_settings_t *chip_cfg) {
+	int i;
 	int res = -1;
-	if (val == NULL) return -1;
-
+		
 	PRINT_FUN();
-
-	buf[0] = 0x00;
-	buf[1] = 0x31; //Get (VM) GPIO Current Pin Value
-
-	//HID API
-	if (hid_write(handle, buf, 65) == -1) {
-		PRINT_RES("write failed", res);
-		return -1;
-	}
-	if (hid_read(handle, buf, 65) == -1) {
-		PRINT_RES("read failed", res);
-		return -1;
-	}
-	// PRINT_BUF_RANGE(0,64);
-	if (buf[1] != 0x00){
-		PRINT_RES("command unsucessful", buf[2]);
-		return -1;
+	 
+	if (chip_cfg == NULL) {
+		res = -EINVAL;
+		PRINT_RES("Invalid pointer", res);
 	}
 
-	// Store to val from Response
-	*val = buf[4];
+	// COMMAND Structure 
+	cmd_buf[0] = 0x00;
+	cmd_buf[1] = GET_VM_GPIO_CURRENT_CHIP_SETTINGS;
+	res = hid_write(handle, cmd_buf, 65);
+	res = hid_read(handle, rsp_buf, 65);
+	// RESPONSE Structure 
+	if (res < 0) {
+		PRINT_RES("hid_read error", res);
+		return res;
+	}
+	if (rsp_buf[1] != 0x00) {
+		res = -EBUSY;
+		PRINT_RES("Command Completed Unsucessfully", res);
+		return res;
+	} 
 
+	uint8_t gp_no = 0;
+	for (gp_no = 0; gp_no <= 8; gp_no ++) {
+		chip_cfg->gp_pin_designation[gp_no] = rsp_buf[4 + gp_no]; 
+	}
+	chip_cfg->gpio_default_output = rsp_buf[13];
+	chip_cfg->gpio_default_dir.dir = rsp_buf[15];
+	chip_cfg->other_chip_settings = rsp_buf[17];
+	chip_cfg->nvram_chip_param_access_control = rsp_buf[18];
+
+	// PRINT_BUF_RANGE(rsp_buf, 0, 19); // Debug only
 	return 0;
 }
-int mcp2210_set_gpio_val(hid_device *handle, uint8_t val) {
+
+int mcp2210_gpio_set_current_chip_settings(hid_device *handle, mcp2210_gpio_chip_settings_t chip_cfg) {
+	int i;
 	int res = -1;
 		
 	PRINT_FUN();
 
-	buf[0] = 0x00;
-	buf[1] = 0x30; //Set (VM) GPIO Current Pin Value
-	buf[5] = val;
+	// COMMAND Structure 
+	cmd_buf[0] = 0x00;
+	cmd_buf[1] = SET_VM_GPIO_CURRENT_CHIP_SETTINGS; //Get (VM) GPIO Current Pin Value
 
-	//HID API
-	if (hid_write(handle, buf, 65) == -1) {
-		PRINT_RES("write failed", res);
-		return -1;
+	uint8_t gp_no = 0;
+	for (gp_no = 0; gp_no <= 8; gp_no ++) {
+		cmd_buf[5 + gp_no] = chip_cfg.gp_pin_designation[gp_no]; 
 	}
-	if (hid_read(handle, buf, 65) == -1) {
-		PRINT_RES("read failed", res);
-		return -1;
-	}
-	// PRINT_BUF_RANGE(0,64);
-	if (buf[1] != 0x00){
-		PRINT_RES("command unsucessful", buf[2]);
-		return -1;
-	}
-	return 0;
-}
+	cmd_buf[14] = chip_cfg.gpio_default_output;
+	cmd_buf[16] = (unsigned char)chip_cfg.gpio_default_dir.dir;
+	cmd_buf[18] = chip_cfg.other_chip_settings;
 
-int mcp2210_get_gpio_function(hid_device *handle, uint8_t gpio, mcp2210_gp_pin_designation_t *func) {
-	int res = -1;
-		
-	PRINT_FUN();
-	
-	buf[0] = 0x00;
-	buf[1] = 0x20; // Get (VM) GPIO Current Chip Settings
-
-	//HID API
-	if (hid_write(handle, buf, 65) == -1) {
-		PRINT_RES("write failed", res);
-		return -1;
+	res = hid_write(handle, cmd_buf, 65); // Command 1
+	res = hid_read(handle, rsp_buf, 65); // Response 1
+	// RESPONSE Structure 
+	if (res < 0) {
+		PRINT_RES("hid_read error", res);
+		return res;
 	}
-	// PRINT_BUF_RANGE(0,64);
-	if (hid_read(handle, buf, 65) == -1) {
-		PRINT_RES("read failed", res);
-		return -1;
-	}
-	// PRINT_BUF_RANGE(0,64);
-	if (buf[1] != 0x00){
-		PRINT_RES("command unsucessful", buf[2]);
-		return -1;
-	}
-	
-	switch(gpio) {
-		case 0:
-			*func = buf[4];
-			break;
-		case 1:
-			*func = buf[5];
-			break;
-		case 2:
-			*func = buf[6];
-			break;
-		case 3:
-			*func = buf[7];
-			break;
-		case 4:
-			*func = buf[8];
-			break;
-		case 5:
-			*func = buf[9];
-			break;
-		case 6:
-			*func = buf[10];
-			break;
-		case 7:
-			*func = buf[11];
-			break;
-		case 8:
-			*func = buf[12];
-			break;
-		default:
-			printf("[%s] %u is not a valid gpio\r\n", __FUNCTION__, gpio);
-			printf("Showing default GPIO Output Instead: %X\r\n", buf[13]);
-			return res = -1;
-			break;
-	}
+	if (rsp_buf[1] != 0x00) {
+		res = -EBUSY;
+		PRINT_RES("Command Completed Unsucessfully", res);
+		return res;
+	} 
 
 	return 0;
 }
 
-int mcp2210_set_gpio_function(hid_device *handle, uint8_t gpio, mcp2210_gp_pin_designation_t func) {
-	int res = -1;
-		
-	PRINT_FUN();
-	
-	buf[0] = 0x00;
-	buf[1] = 0x21; //Set Current Chip Settings
-	
-	switch(gpio) {
-		case 0:
-			buf[5] = func;
-			break;
-		case 1:
-			buf[6] = func;
-			break;
-		case 2:
-			buf[7] = func;
-			break;
-		case 3:
-			buf[8] = func;
-			break;
-		case 4:
-			buf[9] = func;
-			break;
-		case 5:
-			buf[10] = func;
-			break;
-		case 6:
-			buf[11] = func;
-			break;
-		case 7:
-			buf[12] = func;
-			break;
-		case 8:
-			if (func == 0x1) {
-				printf("[%s] %i function is not supported\r\n",__FUNCTION__, func);
-				return res = -1;
-			}
-			buf[13] = func;
-			break;
-		default:
-			printf("[%s] %u is not a valid gpio\r\n", __FUNCTION__, gpio);
-			return res = -1;
-			break;
-	}
-	// Set GPIO Default Output to Low For Now
-	buf[14] = 0x00;
+// Examples
+void gpio_set_examples(hid_device* handle) {
 
-	//HID API
-	if (hid_write(handle, buf, 65) == -1) {
-		PRINT_RES("write failed", res);
-		return -1;
-	}
-	// PRINT_BUF_RANGE(0,64);
-	if (hid_read(handle, buf, 65) == -1) {
-		PRINT_RES("read failed", res);
-		return -1;
-	}
-	// PRINT_BUF_RANGE(0,64);
-	if (buf[1] != 0x00){
-		PRINT_RES("command unsucessful", buf[2]);
-		return -1;
-	}
-
-	return 0;
 }
-int mcp2210_set_gpio_direction(hid_device *handle, uint8_t gpio, mcp2210_gp_pin_direction_t dir) {
-	int res = -1;
-		
-	PRINT_FUN();
-		
-	buf[0] = 0x00;
-	buf[1] = 0x32; // Set (VM) GPIO Current Pin Direction
+void gpio_get_examples(hid_device* handle) {
+	mcp2210_gpio_chip_settings_t chip_settings;
 
-	if (gpio > 7 || dir > 1) {
-		printf("[%s] invalid gpio/dir %u/%u \r\n", __FUNCTION__, gpio, dir);
-	}
-	buf[5] = 0x00 | (dir << gpio);
+	mcp2210_gpio_get_current_chip_settings(handle, &chip_settings);
 
-	//HID API
-	if (hid_write(handle, buf, 65) == -1) {
-		PRINT_RES("write failed", res);
-		return -1;
-	}
-	// PRINT_BUF_RANGE(0,64);
-	if (hid_read(handle, buf, 65) == -1) {
-		PRINT_RES("read failed", res);
-		return -1;
-	}
-	// PRINT_BUF_RANGE(0,64);
-	if (buf[1] != 0x00){
-		PRINT_RES("command unsucessful", buf[2]);
-		return -1;
-	}
-
-	return 0;
+    printf("Byte 4: GP0 Pin Designation - 0x%02X \r\n", chip_settings.gp_pin_designation[0]);
+    printf("Byte 5: GP1 Pin Designation - 0x%02X \r\n", chip_settings.gp_pin_designation[1]);
+    printf("Byte 6: GP2 Pin Designation - 0x%02X \r\n", chip_settings.gp_pin_designation[2]);
+    printf("Byte 7: GP3 Pin Designation - 0x%02X \r\n", chip_settings.gp_pin_designation[3]);
+    printf("Byte 8: GP4 Pin Designation - 0x%02X \r\n", chip_settings.gp_pin_designation[4]);
+    printf("Byte 9: GP5 Pin Designation - 0x%02X \r\n", chip_settings.gp_pin_designation[5]);
+    printf("Byte 10: GP6 Pin Designation - 0x%02X \r\n", chip_settings.gp_pin_designation[6]);
+    printf("Byte 11: GP7 Pin Designation - 0x%02X \r\n", chip_settings.gp_pin_designation[7]);
+    printf("Byte 12: GP8 Pin Designation - 0x%02X \r\n", chip_settings.gp_pin_designation[8]);
+    printf("Byte 13: Default GPIO Output (low byte) - ");
+	print_bits_nl(chip_settings.gpio_default_output);
+    printf("Byte 15: Default GPIO Direction (low byte) - ");
+	print_bits_nl(chip_settings.gpio_default_dir.dir);
+    printf("Byte 17: Other Chip Settings - ");
+	print_bits_nl(chip_settings.other_chip_settings);
+    printf("Byte 18: NVRAM Chip Parameters Access Control - ");
+	print_bits_nl(chip_settings.nvram_chip_param_access_control);
 }
+
 /* END OF GPIO RELATED FUNCTIONS */
