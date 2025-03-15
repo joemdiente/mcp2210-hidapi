@@ -79,10 +79,26 @@ int mcp2210_spi_set_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 		PRINT_RES("hid_read error", res);
 		return res;
 	}
-	if (rsp_buf[1] != 0x00) {
-		res = -EBUSY;
-		PRINT_RES("Command Completed Unsucessfully", res);
-		return res;
+
+	switch(rsp_buf[1]) {
+		case 0xF8: 
+			res = -EBUSY;
+			PRINT_RES("USB Transfer in Progress", res);
+			return res;
+			break;
+		case 0xFB:
+			res = -EPERM;
+			PRINT_RES("Blocked Access", res); // Note: Everything in this code is RAM (VM) only, this should not happen!
+			return res;
+			break;
+		case 0x00:
+			res = 0;
+			PRINT_RES("Command Completed Sucessfully", res);
+			return res;
+			break;
+
+		default:
+			break;
 	} 
 
 	return 0;
@@ -131,10 +147,12 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* data) {
 			res = -EAGAIN;
 			PRINT_RES("RSP 1: Bus is not available\r\n", res);
 			return res;
+			break;
 		case 0xF8:
 			res = -EBUSY;
 			PRINT_RES("RSP 3: Transfer in progress\r\n", res);
 			return res;
+			break;
 		default:
 			break;
 	} 
@@ -142,15 +160,18 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* data) {
 	switch (rsp_buf[3]) { 
 		case 0x20:
 			res = -ENODATA;
-			PRINT_RES("RSP 2: SPI transfer started – no data to receive\r\n", res);
+			PRINT_RES("RSP 2: SPI transfer started: no data to receive\r\n", res);
+			break;
 		case 0x30:
 			res = 0;
-			PRINT_RES("RSP 4: SPI transfer not finished; received data available\r\n", res);
+			PRINT_RES("RSP 4: SPI transfer not finished: received data available\r\n", res);
 			return res;
+			break;
 		case 0x10:
 			res = 0;
 			PRINT_RES("RSP 5: SPI transfer finished – no more data to send\r\n", res);
 			return res;
+			break;
 	}
 
 	// Read Received data
@@ -281,7 +302,37 @@ void spi_transfer_example(hid_device *handle) {
 	
 	printf("\r\n%s\r\n", __FUNCTION__);
 
-	// Setup Transfer
-	printf("SPI Transfer Data\r\n");
+	/* 
+	 * Setup Transfer 
+	 *
+	 */ 
+	mcp2210_spi_transfer_settings_t spi_cfg;
+	mcp2210_spi_get_transfer_settings(handle, &spi_cfg);
+	spi_cfg.bitrate = 30000000; // 3 Mbps
+	spi_cfg.active_cs_val = 0xFF; // All active low
+	spi_cfg.idle_cs_val = 0xFF; // All active low
+	spi_cfg.active_cs_val = 0x1; // assert - data out 100us
+	spi_cfg.last_data_byte_to_cs = 0x1; // de-assert - last data 100us
+	spi_cfg.dly_bw_subseq_data_byte = 0x1; // 100 us
+	spi_cfg.byte_to_tx_per_transfer = 56; // 56 bytes per transfer - Malibu PHY requirement
+	spi_cfg.mode = SPI_MODE_0;
+	mcp2210_spi_set_transfer_settings(handle, spi_cfg);
+
+	mcp2210_gpio_chip_settings_t gp_cfg;
+	mcp2210_gpio_get_current_chip_settings(handle, &gp_cfg);
+	gp_cfg.gp_default_dir.gp0dir = 0; // Output CS0
+	gp_cfg.gp_pin_designation[0] = GP_FUNC_CHIP_SELECTS; //CS0
+	gp_cfg.spi_bus_release_disable = 0; //Enable Bus Release
+
+	uint8_t data[57];
+	uint8_t *data_ptr = &data[0];
+	uint8_t i;
+	// Fill Up Data
+	for (i = 0; i < sizeof(data); i++) {
+		data[i] = i;
+	}
+	// PRINT_BUF_RANGE(data,0,56);
+	// mcp2210_spi_transfer_data(handle, data_ptr);
+
 }
 /* END OF SPI RELATED FUNCTIONS */

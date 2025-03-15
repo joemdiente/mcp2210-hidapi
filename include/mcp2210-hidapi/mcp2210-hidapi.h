@@ -21,6 +21,7 @@
 
 // Debug
 #define DEBUG_MCP2210 1
+#define DEBUG_MCP2210_SHOW_ADVANCED
 // #define DEBUG_MCP2210_SHOW_FUNCTION
 
 /* End of User Configuration */
@@ -40,27 +41,23 @@
 #include <unistd.h>
 
 /* Debug utilities */
-#if (DEBUG_MCP2210 == 1) // debug mcp2210
-#define PRINT_BUF_RANGE(buf,y,z) 	{ if (buf == NULL) {printf("invalid buffer\r\n");} else {int i = 0; for (i = y; i <= z; i++) printf("buffer[%d]: %X\n", i, buf[i]);} }
+#ifdef DEBUG_MCP2210 // debug mcp2210
+#define PRINT_BUF_RANGE(buf,y,z) {if (buf == NULL) {printf("invalid buffer\r\n");} else {int i = 0; for (i = y; i <= z; i++) printf("buffer[%d]: 0x%X\n", i, buf[i]);} }
+#ifdef DEBUG_MCP2210_SHOW_ADVANCED
 #define PRINT_RES(y,z) 	{ printf("[%s] %s: %X\r\n", __FUNCTION__, y, z); }
-
-#ifdef DEBUG_MCP2210_SHOW_FUNCTION
 #define PRINT_FUN() { printf("[Entered %s] \r\n", __FUNCTION__); }
 #else //Show function
 #define PRINT_FUN() {}
+#define PRINT_RES(y,z) {}
 #endif //Show Function
 
 #else // debug mcp2210
 #define PRINT_BUF_RANGE(x,y) {}
-#define PRINT_RES(y,z) {}
 #endif // debug mcp2210
 
 // Main Buffer
 static unsigned char cmd_buf[65];
 static unsigned char rsp_buf[65];
-
-// Functions
-#include "mcp2210-hidapi-misc.h"
 
 typedef enum {
     SPI_BUS_OWNER_NO_OWNER = 0x00,
@@ -87,5 +84,10 @@ int mcp2210_get_usb_manufacturer(hid_device *handle);
  * MCP2210 Status related Functions
  */
 int mcp2210_get_status(hid_device *handle, mcp2210_status_t *status);
+
+// Functions
+#include "mcp2210-hidapi-spi.h"
+#include "mcp2210-hidapi-gpio.h"
+#include "mcp2210-hidapi-misc.h"
 
 #endif /* MCP2210_HIDAPI */

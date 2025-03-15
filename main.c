@@ -8,6 +8,8 @@
 #include <Windows.h>
 
 #include "mcp2210-hidapi.h"
+#include "mcp2210-hidapi-spi.h"
+#include "mcp2210-hidapi-gpio.h"
 
 // Debug
 
@@ -54,7 +56,7 @@ int main(int argc, char* argv[]) {
 		// gpio_get_examples(handle);
 		// gpio_set_examples(handle);
 		
-		// spi_transfer_example(handle);
+		spi_transfer_example(handle);
 
 	} // Examples
 

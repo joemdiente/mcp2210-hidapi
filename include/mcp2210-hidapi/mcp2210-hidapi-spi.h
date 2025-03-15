@@ -15,6 +15,13 @@
 */
 
 /* SPI Transfer Settings */
+typedef enum {
+    SPI_MODE_0 = 0x00,
+    SPI_MODE_1 = 0x01,
+    SPI_MODE_2 = 0x02,
+    SPI_MODE_3 = 0x03,
+} mcp2210_spi_mode_t;
+
 typedef struct {
     uint8_t transfer_size;
     uint32_t bitrate;
@@ -24,7 +31,7 @@ typedef struct {
     uint16_t last_data_byte_to_cs;
     uint16_t dly_bw_subseq_data_byte;
     uint16_t byte_to_tx_per_transfer;
-    uint8_t mode;
+    mcp2210_spi_mode_t mode;
 } mcp2210_spi_transfer_settings_t;
 
 /* Implemented */
