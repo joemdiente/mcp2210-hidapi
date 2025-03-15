@@ -83,6 +83,7 @@ int mcp2210_get_usb_manufacturer(hid_device *handle);
 /*
  * MCP2210 Status related Functions
  */
+#define GET_CHIP_STATUS 0x10
 int mcp2210_get_status(hid_device *handle, mcp2210_status_t *status);
 
 // Functions

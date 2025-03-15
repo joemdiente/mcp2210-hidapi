@@ -42,7 +42,7 @@ int mcp2210_spi_set_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 
 /* Not yet implemented */
 #define SPI_TRANSFER_DATA 0x42
-int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* data);
+int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, uint8_t *rx_data);
 
 #define SPI_CANCEL_TRANSFER 0x11
 int mcp2210_spi_cancel_transfer(hid_device *handle, mcp2210_status_t *status);

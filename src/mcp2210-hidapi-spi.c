@@ -104,13 +104,14 @@ int mcp2210_spi_set_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 	return 0;
 }
 
-int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* data) {
+int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, uint8_t* rx_data) {
 	int i;
 	int res = -1;
-	size_t data_size = sizeof(data);
+	size_t tx_size = sizeof(tx_data);
+	size_t rx_size = sizeof(rx_data);
 	PRINT_FUN();
 	 
-	if (data == NULL || handle == NULL) {
+	if (tx_data == NULL || rx_data == NULL || handle == NULL) {
 		res = -EINVAL;
 		PRINT_RES("Invalid pointer", res);
 	}
@@ -118,16 +119,16 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* data) {
 	// COMMAND Structure 
 	cmd_buf[0] = 0x00;
 	cmd_buf[1] = SPI_TRANSFER_DATA;
-	if (data_size > 60) {
+	if (tx_size > 60) {
 		res = -ERANGE;
 		PRINT_RES("Data must not exceed > 60 bytes", res);
 		return res;
 	}
 	else {
-		cmd_buf[2] = data_size;
+		cmd_buf[2] = tx_size;
 	}
 	unsigned char* cmd_buf_data_ptr = &cmd_buf[5]; //Byte Index 4 
-	memcpy(data, cmd_buf_data_ptr, data_size);
+	memcpy(tx_data, cmd_buf_data_ptr, tx_size);
 	res = hid_write(handle, cmd_buf, 65);
 	res = hid_read(handle, rsp_buf, 65);
 	// RESPONSE Structure 
@@ -165,6 +166,7 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* data) {
 		case 0x30:
 			res = 0;
 			PRINT_RES("RSP 4: SPI transfer not finished: received data available\r\n", res);
+			memcpy(rx_data, &rsp_buf[4], rx_size);
 			return res;
 			break;
 		case 0x10:
@@ -201,9 +203,10 @@ int mcp2210_spi_cancel_transfer(hid_device *handle, mcp2210_status_t *status) {
 	} 
 
  	// Note: Cancel the Current SPI Transfer response is similar to get status response.
-	status->spi_owner == rsp_buf[3];
-	status->attempt_pw_count == rsp_buf[4];
-	status->pw_guessed == rsp_buf[5];
+	status->spi_bus_release_external_request_status = rsp_buf[2];
+	status->spi_owner = rsp_buf[3];
+	status->attempt_pw_count = rsp_buf[4];
+	status->pw_guessed = rsp_buf[5];
 
 	return 0;
 }
@@ -225,7 +228,7 @@ int mcp2210_spi_request_bus_release(hid_device *handle) {
 	}
 	if (rsp_buf[1] != 0x00 || rsp_buf[1] == 0xF8) {
 		res = -EBUSY;
-		PRINT_RES("SPI Bus Not Released - SPI transfer in process", res);
+		PRINT_RES("SPI Bus Not Released - SPI transfer in process", rsp_buf[1]);
 		return res;
 	} 
 	// Above check can also capture this (using else) but just for alignment add here.
@@ -308,31 +311,45 @@ void spi_transfer_example(hid_device *handle) {
 	 */ 
 	mcp2210_spi_transfer_settings_t spi_cfg;
 	mcp2210_spi_get_transfer_settings(handle, &spi_cfg);
-	spi_cfg.bitrate = 30000000; // 3 Mbps
-	spi_cfg.active_cs_val = 0xFF; // All active low
+	spi_cfg.bitrate = 3000000; // 300kbps
+	spi_cfg.active_cs_val = 0x00; // All active low
 	spi_cfg.idle_cs_val = 0xFF; // All active low
-	spi_cfg.active_cs_val = 0x1; // assert - data out 100us
+	spi_cfg.cs_to_data_dly = 0x1; // assert - data out 100us
 	spi_cfg.last_data_byte_to_cs = 0x1; // de-assert - last data 100us
 	spi_cfg.dly_bw_subseq_data_byte = 0x1; // 100 us
 	spi_cfg.byte_to_tx_per_transfer = 56; // 56 bytes per transfer - Malibu PHY requirement
 	spi_cfg.mode = SPI_MODE_0;
+	printf("transfer size before: %d\r\n", spi_cfg.transfer_size);
 	mcp2210_spi_set_transfer_settings(handle, spi_cfg);
+	mcp2210_spi_get_transfer_settings(handle, &spi_cfg);
+	printf("transfer size after: %d\r\n", spi_cfg.transfer_size);
 
 	mcp2210_gpio_chip_settings_t gp_cfg;
 	mcp2210_gpio_get_current_chip_settings(handle, &gp_cfg);
 	gp_cfg.gp_default_dir.gp0dir = 0; // Output CS0
+	gp_cfg.gp_default_val.gp0 = 1; // High
 	gp_cfg.gp_pin_designation[0] = GP_FUNC_CHIP_SELECTS; //CS0
 	gp_cfg.spi_bus_release_disable = 0; //Enable Bus Release
+	mcp2210_gpio_set_current_chip_settings(handle, gp_cfg);
 
-	uint8_t data[57];
-	uint8_t *data_ptr = &data[0];
+	uint8_t tx_data[57];
+	uint8_t rx_data[57];
 	uint8_t i;
 	// Fill Up Data
-	for (i = 0; i < sizeof(data); i++) {
-		data[i] = i;
+	for (i = 0; i < sizeof(tx_data); i++) {
+		tx_data[i] = i;
 	}
 	// PRINT_BUF_RANGE(data,0,56);
-	// mcp2210_spi_transfer_data(handle, data_ptr);
+	mcp2210_status_t stat;
+	mcp2210_spi_transfer_data(handle, &tx_data[0], &rx_data[0]);
+	mcp2210_get_status(handle, &stat);
+	printf("SPI Owner: 0x%X \r\n", stat.spi_owner);
+	printf("SPI bus rel ext req stat: 0x%X \r\n", stat.spi_bus_release_external_request_status);
 
+	mcp2210_spi_cancel_transfer(handle, &stat);
+	printf("SPI Owner: 0x%X \r\n", stat.spi_owner);
+	printf("SPI bus rel ext req stat: 0x%X \r\n", stat.spi_bus_release_external_request_status);
+	mcp2210_spi_request_bus_release(handle);
+	printf("End \r\n");
 }
 /* END OF SPI RELATED FUNCTIONS */
