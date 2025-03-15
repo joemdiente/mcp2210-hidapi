@@ -16,7 +16,7 @@ int mcp2210_gpio_get_current_chip_settings(hid_device *handle, mcp2210_gpio_chip
 		
 	PRINT_FUN();
 	 
-	if (chip_cfg == NULL) {
+	if (chip_cfg == NULL || handle == NULL) {
 		res = -EINVAL;
 		PRINT_RES("Invalid pointer", res);
 	}
@@ -105,7 +105,7 @@ int mcp2210_gpio_get_current_gp_dir(hid_device *handle, mcp2210_gp_dir_t *gp_dir
 		
 	PRINT_FUN();
 	 
-	if (gp_dir == NULL) {
+	if (gp_dir == NULL || handle == NULL) {
 		res = -EINVAL;
 		PRINT_RES("Invalid pointer", res);
 	}
@@ -165,7 +165,7 @@ int mcp2210_gpio_set_current_gp_dir(hid_device *handle, mcp2210_gp_dir_t gp_dir)
 		
 	PRINT_FUN();
 	 
-	if (gp_val == NULL) {
+	if (gp_val == NULL || handle == NULL) {
 		res = -EINVAL;
 		PRINT_RES("Invalid pointer", res);
 	}

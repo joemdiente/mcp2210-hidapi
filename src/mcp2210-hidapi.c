@@ -22,13 +22,13 @@ int mcp2210_get_usb_manufacturer(hid_device *handle) {
 	// 3.1.9 GET USB MANUFACTURER NAME (Page 30)
 	
 	// COMMAND Structure
-	buf[0] = 0x0;
-	buf[1] = 0x61; //Get NVRAM Settings
-	buf[2] = 0x50; //Get USB Manufacturer Name
-	res = hid_write(handle, buf, 65);
+	cmd_buf[0] = 0x0;
+	cmd_buf[1] = 0x61; //Get NVRAM Settings
+	cmd_buf[2] = 0x50; //Get USB Manufacturer Name
+	res = hid_write(handle, cmd_buf, 65);
 
 	// Read RESPONSE Structure 
-	res = hid_read(handle, buf, 65);
+	res = hid_read(handle, rsp_buf, 65);
 	// Print out RESPONSE Structure.
 	// PRINT_BUF_RANGE(0,64);
 		

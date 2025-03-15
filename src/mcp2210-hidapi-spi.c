@@ -16,7 +16,7 @@ int mcp2210_spi_get_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 		
 	PRINT_FUN();
 	 
-	if (cfg == NULL) {
+	if (cfg == NULL || handle == NULL) {
 		res = -EINVAL;
 		PRINT_RES("Invalid pointer", res);
 	}
@@ -88,8 +88,144 @@ int mcp2210_spi_set_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 	return 0;
 }
 
-/* SPI EXAMPLES */
+int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* data) {
+	int i;
+	int res = -1;
+	size_t data_size = sizeof(data);
+	PRINT_FUN();
+	 
+	if (data == NULL || handle == NULL) {
+		res = -EINVAL;
+		PRINT_RES("Invalid pointer", res);
+	}
+
+	// COMMAND Structure 
+	cmd_buf[0] = 0x00;
+	cmd_buf[1] = SPI_TRANSFER_DATA;
+	if (data_size > 60) {
+		res = -ERANGE;
+		PRINT_RES("Data must not exceed > 60 bytes", res);
+		return res;
+	}
+	else {
+		cmd_buf[2] = data_size;
+	}
+	unsigned char* cmd_buf_data_ptr = &cmd_buf[5]; //Byte Index 4 
+	memcpy(data, cmd_buf_data_ptr, data_size);
+	res = hid_write(handle, cmd_buf, 65);
+	res = hid_read(handle, rsp_buf, 65);
+	// RESPONSE Structure 
+	if (res < 0) {
+		PRINT_RES("hid_read error", res);
+		return res;
+	}
+	
+	// Transfer SPI Data Logic Flow (Page 55)
+	switch (rsp_buf[1]) {
+		case 0x00:
+			res = 0;
+			PRINT_RES("RSP 2,4,5: Data Accepted\r\n", res);
+			//Continue to next code.
+			break;
+		case 0xF7:
+			res = -EAGAIN;
+			PRINT_RES("RSP 1: Bus is not available\r\n", res);
+			return res;
+		case 0xF8:
+			res = -EBUSY;
+			PRINT_RES("RSP 3: Transfer in progress\r\n", res);
+			return res;
+		default:
+			break;
+	} 
+
+	switch (rsp_buf[3]) { 
+		case 0x20:
+			res = -ENODATA;
+			PRINT_RES("RSP 2: SPI transfer started – no data to receive\r\n", res);
+		case 0x30:
+			res = 0;
+			PRINT_RES("RSP 4: SPI transfer not finished; received data available\r\n", res);
+			return res;
+		case 0x10:
+			res = 0;
+			PRINT_RES("RSP 5: SPI transfer finished – no more data to send\r\n", res);
+			return res;
+	}
+
+	// Read Received data
+	// rsp_buf[2];
+	return 0;
+}
+int mcp2210_spi_cancel_transfer(hid_device *handle, mcp2210_status_t *status) {
+	int i;
+	int res = -1;
+	
+	PRINT_FUN();
+
+	// COMMAND Structure 
+	cmd_buf[0] = 0x00;
+	cmd_buf[1] = SPI_CANCEL_TRANSFER;
+	res = hid_write(handle, cmd_buf, 65);
+	res = hid_read(handle, rsp_buf, 65);
+	// RESPONSE Structure 
+	if (res < 0) {
+		PRINT_RES("hid_read error", res);
+		return res;
+	}
+	if (rsp_buf[1] != 0x00) {
+		res = -EBUSY;
+		PRINT_RES("Command Completed Unsucessfully", res);
+		return res;
+	} 
+
+ 	// Note: Cancel the Current SPI Transfer response is similar to get status response.
+	status->spi_owner == rsp_buf[3];
+	status->attempt_pw_count == rsp_buf[4];
+	status->pw_guessed == rsp_buf[5];
+
+	return 0;
+}
+int mcp2210_spi_request_bus_release(hid_device *handle) {
+	int i;
+	int res = -1;
+	
+	PRINT_FUN();
+
+	// COMMAND Structure 
+	cmd_buf[0] = 0x00;
+	cmd_buf[1] = SPI_REQUEST_BUS_RELEASE;
+	res = hid_write(handle, cmd_buf, 65);
+	res = hid_read(handle, rsp_buf, 65);
+	// RESPONSE Structure 
+	if (res < 0) {
+		PRINT_RES("hid_read error", res);
+		return res;
+	}
+	if (rsp_buf[1] != 0x00 || rsp_buf[1] == 0xF8) {
+		res = -EBUSY;
+		PRINT_RES("SPI Bus Not Released - SPI transfer in process", res);
+		return res;
+	} 
+	// Above check can also capture this (using else) but just for alignment add here.
+	if (rsp_buf[1] == 0x00) {
+		res = 0;
+		PRINT_RES("Command Completed Successfully – SPI bus released", res);
+		return res;
+	}
+	
+	return 0;
+}
+/*
+ * Examples
+ * These are also used for unit testing.
+ * 
+ */
 void spi_set_examples(hid_device* handle) {
+	
+	printf("\r\n%s\r\n", __FUNCTION__);
+
+	printf("SPI Current Transfer Settings\r\n");
 	mcp2210_spi_transfer_settings_t xfer_settings;
 
 	// Get settings first!
@@ -98,9 +234,14 @@ void spi_set_examples(hid_device* handle) {
 	xfer_settings.bitrate = 3000000;
 	// Then set the settings.
 	mcp2210_spi_set_transfer_settings(handle, xfer_settings);
+
+
 }
-void spi_get_examples(hid_device* handle)
-{
+void spi_get_examples(hid_device* handle) {
+
+	printf("\r\n%s\r\n", __FUNCTION__);
+
+	printf("SPI Current Transfer Settings\r\n");
 	mcp2210_spi_transfer_settings_t xfer_settings;
 	// Interpret
 	mcp2210_spi_get_transfer_settings(handle, &xfer_settings);
@@ -131,5 +272,16 @@ void spi_get_examples(hid_device* handle)
 
 	// SPI Mode
 	printf("SPI Mode: 0x%X \r\n", xfer_settings.mode);
+
+	printf("SPI Transfer SPI Data\r\n");
+	// printf("Ensure MOSI is connected to MISO (looped back)\r\n");
+	// printf("Connect GP0 (CS Pin) to GP1\r\n");
+}
+void spi_transfer_example(hid_device *handle) {
+	
+	printf("\r\n%s\r\n", __FUNCTION__);
+
+	// Setup Transfer
+	printf("SPI Transfer Data\r\n");
 }
 /* END OF SPI RELATED FUNCTIONS */

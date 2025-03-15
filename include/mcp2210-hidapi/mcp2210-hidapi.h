@@ -34,6 +34,11 @@
 //To be defined.
 #endif 
 
+/* Include Standard Libraries */
+#include <stdio.h>
+#include <stdint.h>
+#include <unistd.h>
+
 /* Debug utilities */
 #if (DEBUG_MCP2210 == 1) // debug mcp2210
 #define PRINT_BUF_RANGE(buf,y,z) 	{ if (buf == NULL) {printf("invalid buffer\r\n");} else {int i = 0; for (i = y; i <= z; i++) printf("buffer[%d]: %X\n", i, buf[i]);} }
@@ -51,18 +56,36 @@
 #endif // debug mcp2210
 
 // Main Buffer
-static unsigned char buf[65];
 static unsigned char cmd_buf[65];
 static unsigned char rsp_buf[65];
 
 // Functions
-#include "mcp2210-hidapi-gpio.h"
-#include "mcp2210-hidapi-spi.h"
 #include "mcp2210-hidapi-misc.h"
 
+typedef enum {
+    SPI_BUS_OWNER_NO_OWNER = 0x00,
+    SPI_BUS_OWNER_USB_BRIDGE = 0x01,
+    SPI_BUS_OWNER_EXTERNAL_HOST = 0x02
+} mcp2210_spi_bus_owner_t;
+
+typedef struct {
+    uint8_t spi_bus_release_external_request_status;
+    mcp2210_spi_bus_owner_t spi_owner;
+    uint8_t attempt_pw_count;
+    uint8_t pw_guessed;
+} mcp2210_status_t;
+
+/* Implemented */
 /*
-* USB related Functions
-*/
+ * USB related Functions
+ * These will be put to another source code in the future
+ */
 int mcp2210_get_usb_manufacturer(hid_device *handle);
+
+/* Unimplemented */
+/*
+ * MCP2210 Status related Functions
+ */
+int mcp2210_get_status(hid_device *handle, mcp2210_status_t *status);
 
 #endif /* MCP2210_HIDAPI */
