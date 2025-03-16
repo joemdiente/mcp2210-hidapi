@@ -1,5 +1,4 @@
 #include "hidapi.h"
-#include "include/mcp2210-hidapi/mcp2210-hidapi.h"
 
 #include <stdio.h> // printf
 #include <wchar.h> // wchar_t
@@ -8,10 +7,8 @@
 #include <Windows.h>
 
 #include "mcp2210-hidapi.h"
-#include "mcp2210-hidapi-spi.h"
 #include "mcp2210-hidapi-gpio.h"
-
-// Debug
+#include "mcp2210-hidapi-spi.h"
 
 // Main Test Code
 int main(int argc, char* argv[]) {
@@ -49,14 +46,14 @@ int main(int argc, char* argv[]) {
 	printf("Indexed String 1: %ls\n", wstr);
 
 	// Examples
-	{	
+	{
+		spi_transfer_example(handle);
+
 		// spi_get_examples(handle);
 		// spi_set_examples(handle);
 
 		// gpio_get_examples(handle);
 		// gpio_set_examples(handle);
-		
-		spi_transfer_example(handle);
 
 	} // Examples
 

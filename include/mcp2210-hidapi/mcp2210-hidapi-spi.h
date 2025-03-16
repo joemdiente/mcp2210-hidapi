@@ -5,11 +5,11 @@
  * 
  */
 
+
 #ifndef MCP2210_HIDAPI_SPI
 #define MCP2210_HIDAPI_SPI
 
 #include "mcp2210-hidapi.h"
-
 /*
 * SPI related Functions
 */
@@ -30,7 +30,7 @@ typedef struct {
     uint16_t cs_to_data_dly;
     uint16_t last_data_byte_to_cs;
     uint16_t dly_bw_subseq_data_byte;
-    uint16_t byte_to_tx_per_transfer;
+    uint16_t byte_to_tx_per_transact;
     mcp2210_spi_mode_t mode;
 } mcp2210_spi_transfer_settings_t;
 
@@ -42,7 +42,7 @@ int mcp2210_spi_set_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 
 /* Not yet implemented */
 #define SPI_TRANSFER_DATA 0x42
-int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, uint8_t *rx_data);
+int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, uint8_t tx_size, uint8_t *rx_data);
 
 #define SPI_CANCEL_TRANSFER 0x11
 int mcp2210_spi_cancel_transfer(hid_device *handle, mcp2210_status_t *status);

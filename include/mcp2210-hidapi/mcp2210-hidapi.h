@@ -44,7 +44,7 @@
 #ifdef DEBUG_MCP2210 // debug mcp2210
 #define PRINT_BUF_RANGE(buf,y,z) {if (buf == NULL) {printf("invalid buffer\r\n");} else {int i = 0; for (i = y; i <= z; i++) printf("buffer[%d]: 0x%X\n", i, buf[i]);} }
 #ifdef DEBUG_MCP2210_SHOW_ADVANCED
-#define PRINT_RES(y,z) 	{ printf("[%s] %s: %X\r\n", __FUNCTION__, y, z); }
+#define PRINT_RES(y,z) 	{ printf("[%s] %s: %d\r\n", __FUNCTION__, y, z); }
 #define PRINT_FUN() { printf("[Entered %s] \r\n", __FUNCTION__); }
 #else //Show function
 #define PRINT_FUN() {}
