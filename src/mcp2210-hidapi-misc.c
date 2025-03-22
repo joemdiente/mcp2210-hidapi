@@ -54,4 +54,40 @@ void print_bits_nl(uint8_t byte) {
 	printf("\r\n"); // Add a newline for readability
 }
 
+// Function to set a specific bit to 1 (8-bit)
+uint8_t set_bit(uint8_t number, uint8_t bit_position) {
+    if (bit_position > 7) { // Check for valid bit position (0-7 for 8-bit integers)
+        return number; // Or handle the error as needed
+    }
+    uint8_t mask = 1 << bit_position;
+    return number | mask;
+}
+
+// Function to clear a specific bit to 0 (8-bit)
+uint8_t clear_bit(uint8_t number, uint8_t bit_position) {
+    if (bit_position > 7) {
+        return number; // Or handle the error
+    }
+    uint8_t mask = ~(1 << bit_position);
+    return number & mask;
+}
+
+// Function to toggle a bit (8-bit)
+uint8_t toggle_bit(uint8_t number, uint8_t bit_position) {
+    if (bit_position > 7) {
+        return number;
+    }
+    uint8_t mask = 1 << bit_position;
+    return number ^ mask;
+}
+
+// Function to check the value of a bit (8-bit)
+uint8_t check_bit(uint8_t number, uint8_t bit_position) {
+    if (bit_position > 7) {
+        return -1; // Or handle the error
+    }
+    uint8_t mask = 1 << bit_position;
+    return (number & mask) != 0;
+}
+
 #endif
