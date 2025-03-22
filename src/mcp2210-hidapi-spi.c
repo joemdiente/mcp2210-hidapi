@@ -147,47 +147,38 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, uint8_t tx_s
 	
 	// Transfer SPI Data Logic Flow (Page 55)
 	switch (rsp_buf[1]) {
-		case 0x00:
+		case SPI_DATA_ACCEPTED:
 			res = 0;
-			// PRINT_RES("RSP 2,4,5: Data Accepted\r\n", res);
-			printf("res: 0x%X, spi_rx_size: %u", rsp_buf[3], rsp_buf[2]);
 			//Continue to next code.
 			break;
-		case 0xF7:
+		case SPI_BUS_BUSY:
 			res = rsp_buf[1];
-			PRINT_RES("RSP 1: Bus is not available\r\n", res);
 			return res;
 			break;
-		case 0xF8:
+		case SPI_XFER_IN_PROG:
 			res = rsp_buf[1];
-			PRINT_RES("RSP 3: Transfer in progress\r\n", res);
 			return res;
 			break;
 		default:
-			PRINT_RES("Invalid Response Byte Index 1", res);
 			break;
 	} 
 
 	switch (rsp_buf[3]) { 
-		case 0x20:
+		case SPI_XFER_STARTED_RX_NDATA:
 			res = rsp_buf[3];
-			PRINT_RES("RSP 2: SPI transfer started, no data to receive\r\n", res);
 			return res;
 			break;
-		case 0x30:
+		case SPI_XFER_NDONE_RX_AVAIL:
 			res = rsp_buf[3];
-			PRINT_RES("RSP 4: SPI transfer not finished, received data available\r\n", res);
 			memcpy(rx_data, &rsp_buf[4], rx_size);
 			return res;
 			break;
-		case 0x10:
+		case SPI_XFER_DONE_TX_NONE:
 			res = rsp_buf[3];
-			PRINT_RES("RSP 5: SPI transfer finished – no more data to send\r\n", res);
 			return res;
 			break;
 		default:
 			res = 0;
-			PRINT_RES("Invalid Response Byte Index 3", res);
 			break;
 	}
 	return res;
@@ -332,8 +323,8 @@ void spi_transfer_example(hid_device *handle) {
 	mcp2210_spi_transfer_settings_t spi_cfg;
 	mcp2210_spi_get_transfer_settings(handle, &spi_cfg);
 	spi_cfg.bitrate = 3000000; // 3 MHz
-	spi_cfg.active_cs_val = clear_bit(spi_cfg.active_cs_val, MCP2210_GP0); // Active Low
-	spi_cfg.idle_cs_val = set_bit(spi_cfg.active_cs_val, MCP2210_GP0); // Idle High
+	spi_cfg.active_cs_val = clear_bit(spi_cfg.active_cs_val, GP0); // Active Low
+	spi_cfg.idle_cs_val = set_bit(spi_cfg.active_cs_val, GP0); // Idle High
 	spi_cfg.cs_to_data_dly = 1; // assert - data out 100us
 	spi_cfg.last_data_byte_to_cs = 1; // de-assert - last data 100us
 	spi_cfg.dly_bw_subseq_data_byte = 1; // 100 us

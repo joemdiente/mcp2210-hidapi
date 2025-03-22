@@ -34,6 +34,14 @@ typedef struct {
     mcp2210_spi_mode_t mode;
 } mcp2210_spi_transfer_settings_t;
 
+enum {
+    SPI_DATA_ACCEPTED = 0x00,
+    SPI_BUS_BUSY = 0xF7,
+    SPI_XFER_IN_PROG = 0xF8,
+    SPI_XFER_STARTED_RX_NDATA = 0x20,
+    SPI_XFER_NDONE_RX_AVAIL = 0x30,
+    SPI_XFER_DONE_TX_NONE = 0x10,
+};
 /* Implemented */
 #define GET_VM_SPI_TRANSFER_SETTINGS 0x41 // Datasheet 3.2.1
 #define SET_VM_SPI_TRANSFER_SETTINGS 0x40 // Datasheet 3.2.2

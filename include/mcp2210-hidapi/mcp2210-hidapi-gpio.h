@@ -23,15 +23,15 @@ typedef enum {
 } mcp2210_gp_pin_designation_t;
 
 enum {
-	MCP2210_GP0 = 0,
-	MCP2210_GP1,
-	MCP2210_GP2,
-	MCP2210_GP3,
-	MCP2210_GP4,
-	MCP2210_GP5,
-	MCP2210_GP6,
-	MCP2210_GP7,
-	MCP2210_GP8, //Unverified
+	GP0 = 0,
+	GP1,
+	GP2,
+	GP3,
+	GP4,
+	GP5,
+	GP6,
+	GP7,
+	GP8, //Unverified
 };
 typedef	union { 
 	uint8_t dir;
