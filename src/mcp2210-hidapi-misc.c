@@ -32,10 +32,10 @@ uint16_t combine_uint8_to_uint16_le(uint8_t byte0, uint8_t byte1) {
 
 // Inverse of combine_uint8_to_uint32_le
 void split_uint32_to_uint8_le(uint32_t value, uint8_t* byte0, uint8_t* byte1, uint8_t* byte2, uint8_t* byte3) {
-    *byte0 = (uint8_t)(value >> 24);
-    *byte1 = (uint8_t)(value >> 16);
-    *byte2 = (uint8_t)(value >> 8);
-    *byte3 = (uint8_t)(value);
+    *byte0 = (uint8_t)(value);
+    *byte1 = (uint8_t)(value >> 8);
+    *byte2 = (uint8_t)(value >> 16);
+    *byte3 = (uint8_t)(value >> 24);
 }
 
 // Inverse of combine_uint8_to_uint16_le

@@ -70,13 +70,13 @@ int mcp2210_spi_set_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 	cmd_buf[2] = 0x00; //Reserved
 	cmd_buf[3] = 0x00; //Reserved
 	cmd_buf[4] = 0x00; //Reserved
-	split_uint32_to_uint8_le(cfg.bitrate, &cmd_buf[8], &cmd_buf[7], &cmd_buf[6], &cmd_buf[5]);
-	split_uint16_to_uint8_le(cfg.idle_cs_val, &cmd_buf[10], &cmd_buf[9]);
-	split_uint16_to_uint8_le(cfg.active_cs_val, &cmd_buf[12], &cmd_buf[11]);
-	split_uint16_to_uint8_le((cfg.cs_to_data_dly)/100, &cmd_buf[14], &cmd_buf[13]); //Quanta of 100 us
-	split_uint16_to_uint8_le((cfg.last_data_byte_to_cs)/100, &cmd_buf[16], &cmd_buf[15]); //Quanta of 100 us
-	split_uint16_to_uint8_le((cfg.dly_bw_subseq_data_byte)/100, &cmd_buf[18], &cmd_buf[17]); //Quanta of 100 us
-	split_uint16_to_uint8_le(cfg.byte_to_tx_per_transact, &cmd_buf[20], &cmd_buf[19]);
+	split_uint32_to_uint8_le(cfg.bitrate, &cmd_buf[5], &cmd_buf[6], &cmd_buf[7], &cmd_buf[8]);
+	split_uint16_to_uint8_le(cfg.idle_cs_val, &cmd_buf[9], &cmd_buf[10]);
+	split_uint16_to_uint8_le(cfg.active_cs_val, &cmd_buf[11], &cmd_buf[12]);
+	split_uint16_to_uint8_le((cfg.cs_to_data_dly)/100, &cmd_buf[13], &cmd_buf[14]); //Quanta of 100 us
+	split_uint16_to_uint8_le((cfg.last_data_byte_to_cs)/100, &cmd_buf[15], &cmd_buf[16]); //Quanta of 100 us
+	split_uint16_to_uint8_le((cfg.dly_bw_subseq_data_byte)/100, &cmd_buf[17], &cmd_buf[18]); //Quanta of 100 us
+	split_uint16_to_uint8_le(cfg.byte_to_tx_per_transact, &cmd_buf[19], &cmd_buf[20]);
 	cmd_buf[21] = cfg.mode;
 
 	res = hid_write(handle, cmd_buf, 65); // Command 1
@@ -362,7 +362,7 @@ void spi_transfer_example(hid_device *handle) {
 	uint8_t tx_data[60];
 	uint8_t rx_data[60];
 	uint8_t i;
-	// Fill Up Data
+	// Fill Up Data 
 	for (i = 0; i < 60; i++) {
 		tx_data[i] = i;
 	}
