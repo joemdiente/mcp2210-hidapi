@@ -67,9 +67,7 @@ int mcp2210_spi_set_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 	memset(cmd_buf, 0, 65);
 	cmd_buf[0] = 0x00;
 	cmd_buf[1] = SET_VM_SPI_TRANSFER_SETTINGS;
-	cmd_buf[2] = 0x00; //Reserved
-	cmd_buf[3] = 0x00; //Reserved
-	cmd_buf[4] = 0x00; //Reserved
+
 	split_uint32_to_uint8_le(cfg.bitrate, &cmd_buf[5], &cmd_buf[6], &cmd_buf[7], &cmd_buf[8]);
 	split_uint16_to_uint8_le(cfg.idle_cs_val, &cmd_buf[9], &cmd_buf[10]);
 	split_uint16_to_uint8_le(cfg.active_cs_val, &cmd_buf[11], &cmd_buf[12]);
