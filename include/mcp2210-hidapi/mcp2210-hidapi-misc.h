@@ -23,4 +23,10 @@ void split_uint16_to_uint8_le(uint16_t value, uint8_t* byte0, uint8_t* byte1);
 //nl means newline
 void print_bits_nl(uint8_t byte);
 
+//Bit-wise operations
+uint8_t set_bit(uint8_t number, uint8_t bit_position);
+uint8_t clear_bit(uint8_t number, uint8_t bit_position);
+uint8_t toggle_bit(uint8_t number, uint8_t bit_position);
+uint8_t check_bit(uint8_t number, uint8_t bit_position);
+
 #endif
