@@ -324,60 +324,67 @@ void spi_transfer_example(hid_device *handle) {
 	 */ 
 
 	printf("SPI Transfer SPI Data\r\n");
-	mcp2210_spi_transfer_settings_t spi_cfg;
-	mcp2210_spi_get_transfer_settings(handle, &spi_cfg);
-	printf("byte to tx per transact: %d\r\n", spi_cfg.byte_to_tx_per_transact);
-	spi_cfg.bitrate = 3000000; // 300kbps
-	spi_cfg.active_cs_val = 0b11111110; // 
-	spi_cfg.idle_cs_val = 0b11111111; //
-	spi_cfg.cs_to_data_dly = 0x1; // assert - data out 100us
-	spi_cfg.last_data_byte_to_cs = 0x1; // de-assert - last data 100us
-	spi_cfg.dly_bw_subseq_data_byte = 0x1; // 100 us
-	spi_cfg.byte_to_tx_per_transact = 31; // 56 bytes per transfer - Malibu PHY requirement
-	spi_cfg.mode = SPI_MODE_0;
-	mcp2210_spi_set_transfer_settings(handle, spi_cfg);
 
 	mcp2210_status_t stat;
 	mcp2210_get_status(handle, &stat);
 	printf("SPI Owner: 0x%X \r\n", stat.spi_owner);
 	printf("SPI bus rel ext req stat: 0x%X \r\n", stat.spi_bus_release_external_request_status);
 
+	printf("SPI TXFER Settings\r\n");
+	mcp2210_spi_transfer_settings_t spi_cfg;
+	mcp2210_spi_get_transfer_settings(handle, &spi_cfg);
+	spi_cfg.bitrate = 3000000; // 3 MHz
+	spi_cfg.active_cs_val = clear_bit(spi_cfg.active_cs_val, MCP2210_GP0); // Active Low
+	spi_cfg.idle_cs_val = set_bit(spi_cfg.active_cs_val, MCP2210_GP0); // Idle High
+	spi_cfg.cs_to_data_dly = 1; // assert - data out 100us
+	spi_cfg.last_data_byte_to_cs = 1; // de-assert - last data 100us
+	spi_cfg.dly_bw_subseq_data_byte = 1; // 100 us
+	spi_cfg.byte_to_tx_per_transact = 56; // 56 bytes per transfer - Malibu PHY Max Bytes
+	spi_cfg.mode = SPI_MODE_0;
+	mcp2210_spi_set_transfer_settings(handle, spi_cfg);
+
+	printf("Set GP0 to CS0 Settings\r\n");
 	mcp2210_gpio_chip_settings_t gp_cfg;
 	mcp2210_gpio_get_current_chip_settings(handle, &gp_cfg);
-	gp_cfg.gp_default_dir.gp0dir = 0; // Output CS0
-	gp_cfg.gp_default_val.gp0 = 1; // High
-	// gp_cfg.gp_pin_designation[0] = GP_FUNC_CHIP_SELECTS; //CS0
-	gp_cfg.gp_pin_designation[0] = GP_FUNC_GPIO;
-	gp_cfg.spi_bus_release_disable = 0; //Enable Bus Release
+	gp_cfg.gp_pin_designation[0] = GP_FUNC_CHIP_SELECTS; // CS0
+	gp_cfg.gp_pin_designation[1] = GP_FUNC_GPIO;
+	gp_cfg.gp_pin_designation[2] = GP_FUNC_GPIO;
+	gp_cfg.gp_pin_designation[3] = GP_FUNC_GPIO;
+	gp_cfg.gp_pin_designation[4] = GP_FUNC_GPIO; 
+	gp_cfg.gp_pin_designation[5] = GP_FUNC_GPIO; 
+	gp_cfg.gp_pin_designation[6] = GP_FUNC_GPIO;
+	gp_cfg.gp_pin_designation[7] = GP_FUNC_GPIO; 
+	gp_cfg.gp_default_dir.dir = 0x00; 
+	gp_cfg.gp_default_val.val = 0x00;
+	gp_cfg.spi_bus_release_disable = 0; // Released in each transfer
 	mcp2210_gpio_set_current_chip_settings(handle, gp_cfg);
 
-	uint8_t tx_data[33];
-	uint8_t rx_data[33];
+	uint8_t tx_data[60];
+	uint8_t rx_data[60];
 	uint8_t i;
 	// Fill Up Data
-	for (i = 0; i < sizeof(tx_data); i++) {
+	for (i = 0; i < 60; i++) {
 		tx_data[i] = i;
 	}
 
-	for (i = 0; i < 4; i++) {
-		mcp2210_gp_val_t gp_val;
-		gp_val.gp0 = 0;
-		mcp2210_gpio_set_current_gp_val(handle, gp_val);
-		mcp2210_spi_transfer_data(handle, &tx_data[0], sizeof(tx_data), &rx_data[0]);
-		gp_val.gp0 = 1;
-		mcp2210_gpio_set_current_gp_val(handle, gp_val);
-		mcp2210_spi_cancel_transfer(handle, &stat);
-	}
-	
-	uint8_t spi_stat;
+	uint8_t spi_stat = 0x0;
+	while (spi_stat != 0x10) {
+		printf("txfer data \r\n");
+		spi_stat = mcp2210_spi_transfer_data(handle, &tx_data[0], sizeof(tx_data), &rx_data[0]);
+		if (spi_stat == 0x20) {
+			printf(" USB In Progress wait for Data TX\r\n");
+			Sleep(1000); // 'S'leep is windows thing in ms.
+		}
+	};
+
 	do {
 		mcp2210_get_status(handle, &stat);
 		printf("SPI Owner: 0x%X \r\n", stat.spi_owner);
 	}
 	while (stat.spi_owner == 0x01);
-	// printf("SPI bus rel ext req stat: 0x%X \r\n", stat.spi_bus_release_external_request_status);
+	printf("SPI bus rel ext req stat: 0x%X \r\n", stat.spi_bus_release_external_request_status);
 
-	mcp2210_spi_cancel_transfer(handle, &stat);
+	// mcp2210_spi_cancel_transfer(handle, &stat);
 	// mcp2210_get_status(handle, &stat);
 	// printf("SPI Owner: 0x%X \r\n", stat.spi_owner);
 	// printf("SPI bus rel ext req stat: 0x%X \r\n", stat.spi_bus_release_external_request_status);
