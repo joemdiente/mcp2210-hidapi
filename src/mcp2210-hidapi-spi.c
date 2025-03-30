@@ -51,7 +51,7 @@ int mcp2210_spi_get_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 	cfg->last_data_byte_to_cs = (uint32_t)combine_uint8_to_uint16_le(rsp_buf[15], rsp_buf[14]) * 100;
 	cfg->dly_bw_subseq_data_byte= (uint32_t)combine_uint8_to_uint16_le(rsp_buf[17], rsp_buf[16])  * 100;
 	cfg->byte_to_tx_per_transact = (uint32_t)combine_uint8_to_uint16_le(rsp_buf[19], rsp_buf[18]);
-	spi_transfer_size = (uint32_t)combine_uint8_to_uint16_le(rsp_buf[19], rsp_buf[18]);
+	spi_transfer_size = (uint32_t)combine_uint8_to_uint16_le(rsp_buf[19], rsp_buf[18]); //Global
 	cfg->mode = (uint32_t)rsp_buf[20];
 
 	return 0;
@@ -109,10 +109,10 @@ int mcp2210_spi_set_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 	return 0;
 }
 
-int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, uint8_t tx_size, uint8_t* rx_data) {
+int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, size_t tx_size, uint8_t* rx_data) {
 	int i;
 	int res = -1;
-	size_t rx_size = 0;
+	int rx_size = 0; //Note: this is RX size received from the device. Should be always less than spi_transfer_size
 	PRINT_FUN();
 	 
 	if (tx_data == NULL || rx_data == NULL || handle == NULL) {
@@ -126,7 +126,7 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, uint8_t tx_s
 	cmd_buf[1] = SPI_TRANSFER_DATA;
 	if (tx_size > 60) {
 		res = -ERANGE;
-		PRINT_RES("Data must not exceed > 60 bytes", res);
+		PRINT_RES("TX Data must not exceed > 60 bytes", res);
 		return res;
 	}
 	else if (tx_size > spi_transfer_size) {
@@ -166,32 +166,35 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, uint8_t tx_s
 
 	// SPI_DATA_ACCEPTED
 	rx_size = (int) rsp_buf[2];
+
 	if (rx_size != 0)	{
-		PRINT_BUF_RANGE(rsp_buf, 4, rx_size);
 		memcpy(rx_data, &rsp_buf[4], rx_size);
 	}
+	printf("[0x%X] tx data cnt: %u \r\n", cmd_buf[3], tx_size);
+	printf("[0x%X] rx data cnt: %u \r\n", rsp_buf[3], rx_size);
+	/*
+	 * Still need to work when 0x30 no data to transfer but RX has data!
+	 *
+	 */
 
-	printf("[0x%X] rx data cnt: %d \r\n", rsp_buf[3], (int)rsp_buf[2]);
-	res = rsp_buf[3];
+	switch (rsp_buf[3]) { 
+		case SPI_XFER_STARTED_RX_NDATA:
+			res = rsp_buf[3];
+			return res;
+			break;
+		case SPI_XFER_NDONE_RX_AVAIL:
+			res = rsp_buf[3];
+			return res;
+			break;
+		case SPI_XFER_DONE_TX_NONE:
+			res = rsp_buf[3];
+			return res;
+			break;
+		default:
+			res = 0;
+			break;
+	}
 
-	// switch (rsp_buf[3]) { 
-	// 	case SPI_XFER_STARTED_RX_NDATA:
-	// 		res = rsp_buf[3];
-	// 		return res;
-	// 		break;
-	// 	case SPI_XFER_NDONE_RX_AVAIL:
-	// 		res = rsp_buf[3];
-	// 		return res;
-	// 		break;
-	// 	case SPI_XFER_DONE_TX_NONE:
-	// 		res = rsp_buf[3];
-	// 		return res;
-	// 		break;
-	// 	default:
-	// 		res = 0;
-	// 		break;
-	// }
-	
 	return res;
 }
 int mcp2210_spi_cancel_transfer(hid_device *handle, mcp2210_status_t *status) {
@@ -359,25 +362,32 @@ void spi_transfer_example(hid_device *handle) {
 	gp_cfg.spi_bus_release_disable = 0; // Released in each transfer
 	mcp2210_gpio_set_current_chip_settings(handle, gp_cfg);
 
-	uint8_t tx_data[60];
+	//Prepare Data
+#define TX_SZ 32
+	uint8_t tx_data[TX_SZ];
 	uint8_t rx_data[60];
+	uint8_t rx_size = 0;
 	uint8_t i;
 	// Fill Up Data 
-	for (i = 0; i < 60; i++) {
+	for (i = 0; i < TX_SZ; i++) {
 		tx_data[i] = i;
 	}
 	memset(rx_data, 0, 60);
 
 	uint8_t spi_stat = 0x0;
+
+	printf("Print Transmit Data\r\n", strlen(tx_data));
+	PRINT_BUF_RANGE(tx_data, 0, TX_SZ);
+
 	while (spi_stat != 0x10) {
 		// printf("txfer data \r\n");
-		spi_stat = mcp2210_spi_transfer_data(handle, &tx_data[0], sizeof(tx_data), &rx_data[0]);
+		spi_stat = mcp2210_spi_transfer_data(handle, &tx_data[0], TX_SZ, &rx_data[0]);
 		if (spi_stat == 0x20) {
 			printf(" USB In Progress wait for Data TX\r\n");
 			Sleep(1000); // 'S'leep is windows thing in ms.
 		}
 	};
-	printf("Print Received Data\r\n", strlen(rx_data));
+	printf("Print Received Data\r\n", sizeof(rx_data));
 	PRINT_BUF_RANGE(rx_data, 0, 60);
 
 	do {
