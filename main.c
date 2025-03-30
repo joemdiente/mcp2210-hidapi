@@ -49,11 +49,11 @@ int main(int argc, char* argv[]) {
 	{
 		spi_transfer_example(handle);
 
-		spi_get_examples(handle);
-		spi_set_examples(handle);
+		// spi_get_examples(handle);
+		// spi_set_examples(handle);
 
-		gpio_get_examples(handle);
-		gpio_set_examples(handle);
+		// gpio_get_examples(handle);
+		// gpio_set_examples(handle);
 
 	} // Examples
 

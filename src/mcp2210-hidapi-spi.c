@@ -132,6 +132,7 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, uint8_t tx_s
 	else if (tx_size > spi_transfer_size) {
 		res = -ERANGE;
 		PRINT_RES("Data is more than current transfer size", res);
+		printf("Current tx_size: %u\r\n", tx_size);
 		printf("Current SPI Transfer size: %u\r\n", spi_transfer_size);
 		// return res;
 	}
@@ -163,24 +164,34 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, uint8_t tx_s
 			break;
 	} 
 
-	switch (rsp_buf[3]) { 
-		case SPI_XFER_STARTED_RX_NDATA:
-			res = rsp_buf[3];
-			return res;
-			break;
-		case SPI_XFER_NDONE_RX_AVAIL:
-			res = rsp_buf[3];
-			memcpy(rx_data, &rsp_buf[4], rx_size);
-			return res;
-			break;
-		case SPI_XFER_DONE_TX_NONE:
-			res = rsp_buf[3];
-			return res;
-			break;
-		default:
-			res = 0;
-			break;
+	// SPI_DATA_ACCEPTED
+	rx_size = (int) rsp_buf[2];
+	if (rx_size != 0)	{
+		PRINT_BUF_RANGE(rsp_buf, 4, rx_size);
+		memcpy(rx_data, &rsp_buf[4], rx_size);
 	}
+
+	printf("[0x%X] rx data cnt: %d \r\n", rsp_buf[3], (int)rsp_buf[2]);
+	res = rsp_buf[3];
+
+	// switch (rsp_buf[3]) { 
+	// 	case SPI_XFER_STARTED_RX_NDATA:
+	// 		res = rsp_buf[3];
+	// 		return res;
+	// 		break;
+	// 	case SPI_XFER_NDONE_RX_AVAIL:
+	// 		res = rsp_buf[3];
+	// 		return res;
+	// 		break;
+	// 	case SPI_XFER_DONE_TX_NONE:
+	// 		res = rsp_buf[3];
+	// 		return res;
+	// 		break;
+	// 	default:
+	// 		res = 0;
+	// 		break;
+	// }
+	
 	return res;
 }
 int mcp2210_spi_cancel_transfer(hid_device *handle, mcp2210_status_t *status) {
@@ -355,16 +366,19 @@ void spi_transfer_example(hid_device *handle) {
 	for (i = 0; i < 60; i++) {
 		tx_data[i] = i;
 	}
+	memset(rx_data, 0, 60);
 
 	uint8_t spi_stat = 0x0;
 	while (spi_stat != 0x10) {
-		printf("txfer data \r\n");
+		// printf("txfer data \r\n");
 		spi_stat = mcp2210_spi_transfer_data(handle, &tx_data[0], sizeof(tx_data), &rx_data[0]);
 		if (spi_stat == 0x20) {
 			printf(" USB In Progress wait for Data TX\r\n");
 			Sleep(1000); // 'S'leep is windows thing in ms.
 		}
 	};
+	printf("Print Received Data\r\n", strlen(rx_data));
+	PRINT_BUF_RANGE(rx_data, 0, 60);
 
 	do {
 		mcp2210_get_status(handle, &stat);
