@@ -4,7 +4,11 @@ This project  uses HIDAPI for portability between Linux and Windows.
 
 ## Pre-requisites ##
 MSYS64 (https://www.msys2.org/) \
-HIDAPI Version: hidapi-0.14.0 (https://github.com/libusb/hidapi/releases/tag/hidapi-0.14.0) 
+HIDAPI Version: hidapi-0.14.0 (https://github.com/libusb/hidapi/releases/tag/hidapi-0.14.0) \
+\
+Before doing anything, initialize submodule. (https://github.com/joemdiente/mesa)
+    # git submodule init
+    # git submodule update
 
 ## Building in Windows ##
     ### Using Make ###
@@ -23,6 +27,7 @@ HIDAPI Version: hidapi-0.14.0 (https://github.com/libusb/hidapi/releases/tag/hid
     2. "# cd ./build/".
     3. "# cmake --build ."
         By default, builds WIN and x64 binary. Has *-win32.exe suffix.
+        Uses "ninja".
 
 ## Building in Linux ##
     ### Using Make ###

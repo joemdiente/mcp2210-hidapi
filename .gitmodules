@@ -1,0 +1,4 @@
+[submodule "mesa"]
+	path = mesa
+	url = https://github.com/joemdiente/mesa
+	branch = v2021.09_malibu_eval_hidapi_mcp2210_win32
