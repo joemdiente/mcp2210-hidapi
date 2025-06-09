@@ -10,6 +10,9 @@
 #include "mcp2210-hidapi-gpio.h"
 #include "mcp2210-hidapi-spi.h"
 
+// For Testing PHY Register Access Only
+#include "hidapi_mesa_connector.c"
+
 // Main Test Code
 int main(int argc, char* argv[]) {
 	int res;
@@ -47,15 +50,23 @@ int main(int argc, char* argv[]) {
 
 	// Examples
 	{
-		spi_transfer_example(handle);
+		// spi_transfer_example(handle);
 
-		// spi_get_examples(handle);
-		// spi_set_examples(handle);
+		// spi_get_examples(handle); // example get/read SPI command/response
+		// spi_set_examples(handle); // example set/write SPI command/response
 
-		// gpio_get_examples(handle);
-		// gpio_set_examples(handle);
+		// gpio_get_examples(handle); // example get/read GPIO command/response
+		// gpio_set_examples(handle); // example set/write GPIO command/response
 
-	} // Examples
+	} 
+	// End of Examples
+
+	/* MESA Connector VSC8528 Pre-testing
+	 * This section was added to test HID API with MESA. It should only contain the connector/HAL
+	 */
+	{
+		spi_32bit_read_write(1, 1, 1, 1, 0x1, NULL);
+	}
 
 	// Close the device
 	hid_close(handle);
