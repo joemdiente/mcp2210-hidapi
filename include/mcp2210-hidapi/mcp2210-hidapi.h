@@ -1,5 +1,5 @@
 /* 
-* MCP2210 C Mainc code Header
+* MCP2210 C Main code Header
 *
 * Author: Joemel John Diente <joemdiente@gmail.com>
 * 
@@ -19,12 +19,7 @@
  */
 #define WINDOWS
 
-// Debug
-#define DEBUG_MCP2210 1
-#define DEBUG_MCP2210_SHOW_ADVANCED
-// #define DEBUG_MCP2210_SHOW_FUNCTION
-
-/* End of User Configuration */
+#include "mcp2210-hidapi-debug.h"
 
 /* Check Operating System */
 #ifdef WINDOWS
@@ -39,21 +34,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
-
-/* Debug utilities */
-#ifdef DEBUG_MCP2210 // debug mcp2210
-#define PRINT_BUF_RANGE(buf,y,z) {if (buf == NULL) {printf("invalid buffer\r\n");} else {int i = 0; for (i = y; i <= z; i++) printf("buffer[%d]: 0x%X\n", i, buf[i]);} }
-#ifdef DEBUG_MCP2210_SHOW_ADVANCED
-#define PRINT_RES(y,z) 	{ printf("[%s] %s: 0x%X\r\n", __FUNCTION__, y, z); }
-#define PRINT_FUN() { printf("[Entered %s] \r\n", __FUNCTION__); }
-#else //Show function
-#define PRINT_FUN() {}
-#define PRINT_RES(y,z) {}
-#endif //Show Function
-
-#else // debug mcp2210
-#define PRINT_BUF_RANGE(x,y) {}
-#endif // debug mcp2210
 
 // Main Buffer
 static unsigned char cmd_buf[65];
