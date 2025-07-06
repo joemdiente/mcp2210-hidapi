@@ -36,7 +36,7 @@
 #include <stdbool.h>
 
 #include "mcp2210-hidapi-debug.h"
-
+#include "mcp2210-hidapi-spi.h"
 /**
  * From mesa/include/vtss_init_api.h
  * 
@@ -70,14 +70,36 @@ rc spi_32bit_read_write(uint8_t inst, uint8_t port_no, bool rd, /* (1=rd, 0=wr) 
     PRINT_FUN();
 
     vsc85xx_spi_slave_inst_bit_seq_t bit_seq;
+    bit_seq.rw = 1;
     bit_seq.ch_num = 1;
+    bit_seq.dev_num = 3;
     bit_seq.reg_num = 0x5555;
     bit_seq.data = 0xAAAAAAAA;
 
-    printf("%u / %X / %X ", bit_seq.ch_num, bit_seq.reg_num, bit_seq.data);
     return VTSS_RC_OK;
 }
 
+rc spi_init(void)
+{
+    mcp2210_spi_transfer_settings_t spi_cfg;
+    mcp2210_spi_get_transfer_settings(NULL, &spi_cfg);
+    spi_cfg.bitrate = 3000000;
+	spi_cfg.active_cs_val = clear_bit(spi_cfg.active_cs_val, GP0); // Active Low
+	spi_cfg.idle_cs_val = set_bit(spi_cfg.active_cs_val, GP0); // Idle High
+	spi_cfg.cs_to_data_dly = 1; // assert - data out 100us
+	spi_cfg.last_data_byte_to_cs = 1; // de-assert - last data 100us
+	spi_cfg.dly_bw_subseq_data_byte = 1; // 100 us
+	spi_cfg.byte_to_tx_per_transact = 56; // 56 bytes per transfer - Malibu PHY Max Bytes
+	spi_cfg.mode = SPI_MODE_0;
+    mcp2210_spi_set_transfer_settings(NULL, spi_cfg);
+    
+    mcp2210_gpio_chip_settings_t gp_cfg;
+    mcp2210_gpio_get_current_chip_settings(NULL, &gp_cfg);
+    gp_cfg.gp_pin_designation[0] = GP_FUNC_CHIP_SELECTS; // CS0
+    gp_cfg.spi_bus_release_disable = 0; // Released in each transfer
+    mcp2210_gpio_set_current_chip_settings(NULL, gp_cfg);
+
+}
 
 /* Datasheet description
 

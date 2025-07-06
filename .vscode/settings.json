@@ -8,6 +8,8 @@
         "mcp2210-hidapi-gpio.h": "c",
         "errno.h": "c",
         "mcp2210-hidapi-spi.h": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "format": "c",
+        "mcp2210-hidapi-debug.h": "c"
     }
 }
