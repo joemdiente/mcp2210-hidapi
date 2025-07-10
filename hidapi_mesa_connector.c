@@ -57,25 +57,41 @@ typedef int rc;
 #define VTSS_RC_OK 0;
 #define VTSS_RC_ERROR -1;
 
-typedef struct {
-    uint8_t rw : 1;
-    uint8_t ch_num : 2;
-    uint8_t dev_num : 5;
+typedef struct __attribute__((__packed__)) {
+    uint32_t data : 32; //LSB
     uint16_t reg_num : 16;
-    uint32_t data : 32;
+    uint8_t dev_num : 5;
+    uint8_t ch_num : 2;
+    uint8_t rw : 1;
 } vsc85xx_spi_slave_inst_bit_seq_t;
+
+typedef struct {
+    uint8_t byte[8];
+} vsc85xx_spi_slave_inst_buf_t;
 
 rc spi_32bit_read_write(uint8_t inst, uint8_t port_no, bool rd, /* (1=rd, 0=wr) */uint8_t mmd, uint16_t addr, uint32_t *value) {
 
     PRINT_FUN();
 
+    uint8_t i = 0;
     vsc85xx_spi_slave_inst_bit_seq_t bit_seq;
-    bit_seq.rw = 1;
-    bit_seq.ch_num = 1;
-    bit_seq.dev_num = 3;
-    bit_seq.reg_num = 0x5555;
-    bit_seq.data = 0xAAAAAAAA;
+    vsc85xx_spi_slave_inst_buf_t buf;
 
+    memset(&bit_seq, 0, sizeof(bit_seq));
+
+    bit_seq.rw = 1;     //0b1 = Write
+    bit_seq.ch_num = 1; //0b01 = Channel 1
+    bit_seq.dev_num = 0x1E; //0b11110 = Device Number 1E
+    bit_seq.reg_num = 0x5555; // Dummy Register Value
+    bit_seq.data = 0xAAAAAAAA; // Dummy Data Value
+ 
+    //Verify in Terminal
+    unsigned char *byte_ptr = (unsigned char *)&bit_seq;
+    for (size_t i = sizeof(bit_seq); i > 0; i--) {
+        printf("%02X",byte_ptr[i - 1]);
+    }
+
+    //Single Register Read
     return VTSS_RC_OK;
 }
 
