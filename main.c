@@ -32,24 +32,25 @@ int main(int argc, char* argv[]) {
  		return 1;
 	}
 
-	// Read the Manufacturer String
-	res = hid_get_manufacturer_string(handle, wstr, MAX_STR);
-	printf("Manufacturer String: %ls\n", wstr);
-
-	// Read the Product String
-	res = hid_get_product_string(handle, wstr, MAX_STR);
-	printf("Product String: %ls\n", wstr);
-
-	// Read the Serial Number String
-	res = hid_get_serial_number_string(handle, wstr, MAX_STR);
-	printf("Serial Number String: (%d) %ls\n", wstr[0], wstr);
-
-	// Read Indexed String 1
-	res = hid_get_indexed_string(handle, 1, wstr, MAX_STR);
-	printf("Indexed String 1: %ls\n", wstr);
-
 	// Examples
 	{
+		// // Read the Manufacturer String
+		// res = hid_get_manufacturer_string(handle, wstr, MAX_STR);
+		// printf("Manufacturer String: %ls\n", wstr);
+
+		// // Read the Product String
+		// res = hid_get_product_string(handle, wstr, MAX_STR);
+		// printf("Product String: %ls\n", wstr);
+
+		// // Read the Serial Number String
+		// res = hid_get_serial_number_string(handle, wstr, MAX_STR);
+		// printf("Serial Number String: (%d) %ls\n", wstr[0], wstr);
+
+		// // Read Indexed String 1
+		// res = hid_get_indexed_string(handle, 1, wstr, MAX_STR);
+		// printf("Indexed String 1: %ls\n", wstr);
+
+		// // Setup a transfer and transmit a data
 		// spi_transfer_example(handle);
 
 		// spi_get_examples(handle); // example get/read SPI command/response
@@ -65,7 +66,7 @@ int main(int argc, char* argv[]) {
 	 * This section was added to test HID API with MESA. It should only contain the connector/HAL
 	 */
 	{
-		spi_32bit_read_write(1, 1, 1, 1, 0x1, NULL);
+		// spi_32bit_read_write(1, 1, 1, 1, 0x1, NULL);
 	}
 
 	// Close the device
