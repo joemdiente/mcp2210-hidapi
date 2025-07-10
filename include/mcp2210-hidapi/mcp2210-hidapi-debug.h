@@ -8,8 +8,8 @@
 #ifndef MCP2210_HIDAPI_DEBUG
 #define MCP2210_HIDAPI_DEBUG
 // Debug
-#define DEBUG_MCP2210 1
-#define DEBUG_MCP2210_SHOW_ADVANCED
+// #define DEBUG_MCP2210
+// #define DEBUG_MCP2210_SHOW_ADVANCED
 // #define DEBUG_MCP2210_SHOW_FUNCTION
 
 /* Debug utilities */
@@ -27,7 +27,9 @@
 #endif //Show Function
 
 #else // debug mcp2210
-#define PRINT_BUF_RANGE(x,y) {}
+#define PRINT_BUF_RANGE(x,y,z) {}
+#define PRINT_FUN() {}
+#define PRINT_RES(y,z) {}
 #endif // debug mcp2210
 
 /* End of User Configuration */
