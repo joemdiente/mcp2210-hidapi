@@ -69,7 +69,7 @@ typedef struct {
     uint8_t byte[8];
 } vsc85xx_spi_slave_inst_buf_t;
 
-rc spi_32bit_read_write(uint8_t inst, uint8_t port_no, bool rd, /* (1=rd, 0=wr) */uint8_t mmd, uint16_t addr, uint32_t *value) {
+rc spi_32bit_read_write(hid_device* handle, uint8_t inst, uint8_t port_no, bool rd, /* (1=rd, 0=wr) */uint8_t mmd, uint16_t addr, uint32_t *value) {
 
     PRINT_FUN();
 

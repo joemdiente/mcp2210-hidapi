@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
 	 * This section was added to test HID API with MESA. It should only contain the connector/HAL
 	 */
 	{
-		spi_32bit_read_write(1, 1, 1, 1, 0x1, NULL);
+		spi_32bit_read_write(handle, 1, 1, 1, 1, 0x1, NULL);
 	}
 
 	// Close the device
