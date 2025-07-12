@@ -10,6 +10,10 @@
         "mcp2210-hidapi-spi.h": "c",
         "type_traits": "c",
         "format": "c",
-        "mcp2210-hidapi-debug.h": "c"
+        "mcp2210-hidapi-debug.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "span": "c"
     }
 }

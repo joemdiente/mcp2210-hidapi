@@ -58,11 +58,11 @@ typedef int rc;
 #define VTSS_RC_ERROR -1;
 
 typedef struct __attribute__((__packed__)) {
-    uint32_t data : 32; //LSB
-    uint16_t reg_num : 16;
-    uint8_t dev_num : 5;
-    uint8_t ch_num : 2;
     uint8_t rw : 1;
+    uint8_t ch_num : 2;
+    uint8_t dev_num : 5;
+    uint16_t reg_num : 16;
+    uint32_t data : 32;
 } vsc85xx_spi_slave_inst_bit_seq_t;
 
 typedef struct {
@@ -74,47 +74,68 @@ rc spi_32bit_read_write(hid_device* handle, uint8_t inst, uint8_t port_no, bool 
     PRINT_FUN();
 
     uint8_t i = 0;
-    vsc85xx_spi_slave_inst_bit_seq_t bit_seq;
-    vsc85xx_spi_slave_inst_buf_t buf;
+    vsc85xx_spi_slave_inst_bit_seq_t bit_seq_tx;
+    vsc85xx_spi_slave_inst_bit_seq_t bit_seq_rx;
 
-    memset(&bit_seq, 0, sizeof(bit_seq));
+    memset(&bit_seq_tx, 0, sizeof(bit_seq_tx));
+    memset(&bit_seq_rx, 0, sizeof(bit_seq_rx));   
 
-    bit_seq.rw = 1;     //0b1 = Write
-    bit_seq.ch_num = 1; //0b01 = Channel 1
-    bit_seq.dev_num = 0x1E; //0b11110 = Device Number 1E
-    bit_seq.reg_num = 0x5555; // Dummy Register Value
-    bit_seq.data = 0xAAAAAAAA; // Dummy Data Value
- 
-    //Verify in Terminal
-    unsigned char *byte_ptr = (unsigned char *)&bit_seq;
-    for (size_t i = sizeof(bit_seq); i > 0; i--) {
-        printf("%02X",byte_ptr[i - 1]);
+    unsigned char *byte_ptr_tx = (unsigned char *)&bit_seq_tx;
+    unsigned char *byte_ptr_rx = (unsigned char *)&bit_seq_rx;
+    
+    // Test Bit Sequence (Software test only)
+    bool sw_test = true;
+    if (sw_test) { 
+        bit_seq_tx.rw = 1;     //0b1 = Write
+        bit_seq_tx.ch_num = 1; //0b01 = Channel 1
+        bit_seq_tx.dev_num = 0x1E; //0b11110 = Device Number 1E
+        bit_seq_tx.reg_num = 0x5555; // Dummy Register Value
+        bit_seq_tx.data = 0xAAAAAAAA; // Dummy Data Value
+    }
+    // Verify in Terminal (Software Test)
+    for (size_t i = sizeof(bit_seq_tx); i > 0; i--) {
+        printf("ptr_adr: %X, %02X \r\n", &byte_ptr_tx[i - 1], byte_ptr_tx[i - 1]);
+    }
+    
+    // Test using MCP2210 EVB and Logic Sal
+    bool hw_test = true; 
+    if (hw_test) {
+        // mcp2210-hidapi-spi initialization
+        mcp2210_spi_transfer_settings_t spi_cfg;
+        mcp2210_spi_get_transfer_settings(handle, &spi_cfg);
+        spi_cfg.bitrate = 3000000;
+        spi_cfg.active_cs_val = clear_bit(spi_cfg.active_cs_val, GP0); // Active Low
+        spi_cfg.idle_cs_val = set_bit(spi_cfg.active_cs_val, GP0); // Idle High
+        spi_cfg.cs_to_data_dly = 1; // assert - data out 100us
+        spi_cfg.last_data_byte_to_cs = 1; // de-assert - last data 100us
+        spi_cfg.dly_bw_subseq_data_byte = 1; // 100 us
+        spi_cfg.byte_to_tx_per_transact = sizeof(bit_seq_tx);
+        spi_cfg.mode = SPI_MODE_0;
+        mcp2210_spi_set_transfer_settings(handle, spi_cfg);
+
+        mcp2210_gpio_chip_settings_t gp_cfg;
+        mcp2210_gpio_get_current_chip_settings(handle, &gp_cfg);
+        gp_cfg.gp_pin_designation[0] = GP_FUNC_CHIP_SELECTS; // CS0
+        gp_cfg.spi_bus_release_disable = 0; // Released in each transfer
+        mcp2210_gpio_set_current_chip_settings(handle, gp_cfg);
+
+        printf("Sending Test Bit Sequence: \r\n", sizeof(bit_seq_tx));
+        uint8_t spi_stat = 0x0; 
+        while (spi_stat != 0x10) {
+            spi_stat = mcp2210_spi_transfer_data(handle, byte_ptr_tx, sizeof(bit_seq_tx), byte_ptr_rx);
+            if (spi_stat == 0x20) {
+                printf(" USB In Progress wait for Data TX\r\n");
+                Sleep(1000); // 'S'leep is windows thing in ms.
+            }
+        };
+
+        printf("Print Received Data\r\n", sizeof(byte_ptr_rx));
+        for (size_t i = sizeof(bit_seq_rx); i > 0; i--) {
+            printf("ptr_adr: %X, %02X \r\n", &byte_ptr_rx[i - 1], byte_ptr_rx[i - 1]);
+        }
     }
 
-    //Single Register Read
     return VTSS_RC_OK;
-}
-
-rc spi_init(void)
-{
-    mcp2210_spi_transfer_settings_t spi_cfg;
-    mcp2210_spi_get_transfer_settings(NULL, &spi_cfg);
-    spi_cfg.bitrate = 3000000;
-	spi_cfg.active_cs_val = clear_bit(spi_cfg.active_cs_val, GP0); // Active Low
-	spi_cfg.idle_cs_val = set_bit(spi_cfg.active_cs_val, GP0); // Idle High
-	spi_cfg.cs_to_data_dly = 1; // assert - data out 100us
-	spi_cfg.last_data_byte_to_cs = 1; // de-assert - last data 100us
-	spi_cfg.dly_bw_subseq_data_byte = 1; // 100 us
-	spi_cfg.byte_to_tx_per_transact = 56; // 56 bytes per transfer - Malibu PHY Max Bytes
-	spi_cfg.mode = SPI_MODE_0;
-    mcp2210_spi_set_transfer_settings(NULL, spi_cfg);
-    
-    mcp2210_gpio_chip_settings_t gp_cfg;
-    mcp2210_gpio_get_current_chip_settings(NULL, &gp_cfg);
-    gp_cfg.gp_pin_designation[0] = GP_FUNC_CHIP_SELECTS; // CS0
-    gp_cfg.spi_bus_release_disable = 0; // Released in each transfer
-    mcp2210_gpio_set_current_chip_settings(NULL, gp_cfg);
-
 }
 
 /* Datasheet description
