@@ -132,9 +132,7 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, size_t tx_si
 	else if (tx_size > spi_transfer_size) {
 		res = -ERANGE;
 		PRINT_RES("Data is more than current transfer size", res);
-		printf("Current tx_size: %u\r\n", tx_size);
-		printf("Current SPI Transfer size: %u\r\n", spi_transfer_size);
-		// return res;
+		return res;
 	}
 	cmd_buf[2] = tx_size;
 	memcpy(&cmd_buf[5], tx_data, tx_size);
