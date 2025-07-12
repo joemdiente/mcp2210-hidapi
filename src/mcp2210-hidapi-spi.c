@@ -161,20 +161,8 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, size_t tx_si
 		default:
 			break;
 	} 
-
-	// SPI_DATA_ACCEPTED
-	rx_size = (int) rsp_buf[2];
-
-	if (rx_size != 0)	{
-		memcpy(rx_data, &rsp_buf[4], rx_size);
-	}
-	printf("[0x%X] tx data cnt: %u \r\n", cmd_buf[3], tx_size);
-	printf("[0x%X] rx data cnt: %u \r\n", rsp_buf[3], rx_size);
-	/*
-	 * Still need to work when 0x30 no data to transfer but RX has data!
-	 *
-	 */
-
+	
+	// SPI_DATA_ACCEPTED -> Transfer Progress (Tx buffer and Rx buffer)
 	switch (rsp_buf[3]) { 
 		case SPI_XFER_STARTED_RX_NDATA:
 			res = rsp_buf[3];
@@ -185,6 +173,11 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, size_t tx_si
 			return res;
 			break;
 		case SPI_XFER_DONE_TX_NONE:
+			//Transfer is done; Implicitly no more RX byte
+			rx_size = (int) rsp_buf[2];
+			if (rx_size != 0)	{	//If no RX, then skip.
+				memcpy(rx_data, &rsp_buf[4], rx_size);
+			}
 			res = rsp_buf[3];
 			return res;
 			break;
