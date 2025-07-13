@@ -28,14 +28,6 @@ typedef int rc;
 #define VTSS_RC_OK 0;
 #define VTSS_RC_ERROR -1;
 
-typedef struct __attribute__((__packed__)) {
-    bool rw : 1;
-    uint8_t port_no : 2;
-    uint8_t  dev : 5;
-    uint16_t  reg_num;
-    uint32_t   value;
-} test_t;
-
 #define VSC85XX_BIT_SEQ_BYTE_COUNT 7 // Malibu bit sequence is 7 bytes.
 typedef uint8_t vsc85xx_spi_slave_inst_bit_seq_t[VSC85XX_BIT_SEQ_BYTE_COUNT];
 
@@ -48,7 +40,6 @@ rc spi_32bit_read_write(hid_device* handle, uint8_t port_no, bool rd, /* (1=rd, 
     PRINT_FUN();
 
     uint8_t i = 0;
-    test_t test;
     vsc85xx_spi_slave_inst_bit_seq_t bit_seq;
 
     memset(&bit_seq, 0, sizeof(bit_seq));
