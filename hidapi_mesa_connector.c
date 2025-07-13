@@ -34,38 +34,39 @@ typedef struct __attribute__((__packed__)) {
     uint8_t  dev : 5;
     uint16_t  reg_num;
     uint32_t   value;
-} vsc85xx_spi_slave_inst_bit_seq_t;
+} test_t;
 
-typedef struct {
-    uint8_t byte[8];
-} vsc85xx_spi_slave_inst_buf_t;
+#define VSC85XX_BIT_SEQ_BYTE_COUNT 7 // Malibu bit sequence is 7 bytes.
+typedef uint8_t vsc85xx_spi_slave_inst_bit_seq_t[VSC85XX_BIT_SEQ_BYTE_COUNT];
 
-rc spi_32bit_read_write(hid_device* handle, uint8_t inst, uint8_t port_no, bool rd, /* (1=rd, 0=wr) */uint8_t dev, uint16_t reg_num, uint32_t *value) {
+#define MALIBU_RW_BIT_OFFSET 7 
+#define MALIBU_PORTNO_BIT_OFFSET 5
+#define MALIBU_DEVNO_BIT_SEQ_OFFSET 0
+
+rc spi_32bit_read_write(hid_device* handle, uint8_t port_no, bool rd, /* (1=rd, 0=wr) */uint8_t dev, uint16_t reg_num, uint32_t *value) {
 
     PRINT_FUN();
 
     uint8_t i = 0;
-    vsc85xx_spi_slave_inst_bit_seq_t bit_seq_tx;
-    vsc85xx_spi_slave_inst_bit_seq_t bit_seq_rx;
+    test_t test;
+    vsc85xx_spi_slave_inst_bit_seq_t bit_seq;
 
-    memset(&bit_seq_tx, 0, sizeof(bit_seq_tx));
-    memset(&bit_seq_rx, 0, sizeof(bit_seq_rx));   
-
-    unsigned char *byte_ptr_tx = (unsigned char *)&bit_seq_tx;
-    unsigned char *byte_ptr_rx = (unsigned char *)&bit_seq_rx;
+    memset(&bit_seq, 0, sizeof(bit_seq));
     
     // Test Bit Sequence (Software test only)
     bool sw_test = true;
     if (sw_test) { 
-        bit_seq_tx.rw = rd;     //0b1 = Write
-        bit_seq_tx.port_no = port_no; //0b01 = Channel/Port 1
-        bit_seq_tx.dev = dev; //0b11110 = Device Number 1E
-        bit_seq_tx.reg_num = reg_num; // Dummy Register Value
-        bit_seq_tx.value = *value; // Dummy Data Value
-    }
-    // Verify in Terminal (Software Test)
-    for (size_t i = sizeof(bit_seq_tx); i > 0; i--) {
-        printf("ptr_adr: %X, %02X \r\n", &byte_ptr_tx[i - 1], byte_ptr_tx[i - 1]);
+        // First Byte to Send is LSB.
+        bit_seq[0] = (rd << MALIBU_RW_BIT_OFFSET);
+        bit_seq[0] |= (port_no << MALIBU_PORTNO_BIT_OFFSET);
+        bit_seq[0] |= (dev << MALIBU_DEVNO_BIT_SEQ_OFFSET);
+        memcpy(&bit_seq[1], &reg_num, 2);
+        memcpy(&bit_seq[3], value, 4);
+
+        // Verify in Terminal (Software Test)
+        for (size_t i = sizeof(bit_seq); i > 0; i--) {
+            printf("ptr_adr: %X, %02X \r\n", &bit_seq[i - 1], bit_seq[i - 1]);
+        }
     }
     
     // Test using MCP2210 EVB and Logic Sal
@@ -80,7 +81,7 @@ rc spi_32bit_read_write(hid_device* handle, uint8_t inst, uint8_t port_no, bool 
         spi_cfg.cs_to_data_dly = 1; // assert - data out 100us
         spi_cfg.last_data_byte_to_cs = 1; // de-assert - last data 100us
         spi_cfg.dly_bw_subseq_data_byte = 1; // 100 us
-        spi_cfg.byte_to_tx_per_transact = sizeof(bit_seq_tx);
+        spi_cfg.byte_to_tx_per_transact = sizeof(bit_seq);
         spi_cfg.mode = SPI_MODE_0;
         mcp2210_spi_set_transfer_settings(handle, spi_cfg);
 
@@ -90,20 +91,23 @@ rc spi_32bit_read_write(hid_device* handle, uint8_t inst, uint8_t port_no, bool 
         gp_cfg.spi_bus_release_disable = 0; // Released in each transfer
         mcp2210_gpio_set_current_chip_settings(handle, gp_cfg);
 
-        printf("Sending Test Bit Sequence: \r\n", sizeof(bit_seq_tx));
+        printf("Sending Test Bit Sequence: \r\n", sizeof(bit_seq));
         uint8_t spi_stat = 0x0; 
         while (spi_stat != 0x10) {
-            spi_stat = mcp2210_spi_transfer_data(handle, byte_ptr_tx, sizeof(bit_seq_tx), byte_ptr_rx);
+            spi_stat = mcp2210_spi_transfer_data(handle, bit_seq, sizeof(bit_seq), bit_seq);
             if (spi_stat == 0x20) {
                 printf(" USB In Progress wait for Data TX\r\n");
                 Sleep(1000); // 'S'leep is windows thing in ms.
             }
         };
 
-        printf("Print Received Data\r\n", sizeof(byte_ptr_rx));
-        for (size_t i = sizeof(bit_seq_rx); i > 0; i--) {
-            printf("ptr_adr: %X, %02X \r\n", &byte_ptr_rx[i - 1], byte_ptr_rx[i - 1]);
+        printf("Print Received Data\r\n", sizeof(bit_seq));
+        for (size_t i = sizeof(bit_seq); i > 0; i--) {
+            printf("ptr_adr: %X, %02X \r\n", &bit_seq[i - 1], bit_seq[i - 1]);
         }
+
+        // Print Expected Return Value
+        printf("Should return model for a VSC 825x\r\n");
     }
 
     return VTSS_RC_OK;

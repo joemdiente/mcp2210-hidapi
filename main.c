@@ -68,7 +68,11 @@ int main(int argc, char* argv[]) {
 	 */
 	{
 		uint32_t val = 0xAAAAAAAA;
-		spi_32bit_read_write(handle, 1, 0, 1, 0x1e, 0x0000, &val);
+		uint16_t reg = 0x5555;
+		uint8_t dev = 0x1E;
+		uint8_t rw = 0b1;
+		uint8_t port = 0b10;
+		spi_32bit_read_write(handle, port, rw, dev, reg, &val);
 	}
 
 	// Close the device
