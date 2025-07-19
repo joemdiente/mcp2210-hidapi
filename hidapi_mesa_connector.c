@@ -34,72 +34,79 @@ typedef uint8_t vsc85xx_spi_slave_inst_bit_seq_t[VSC85XX_BIT_SEQ_BYTE_COUNT];
 #define MALIBU_RW_BIT_OFFSET 7 
 #define MALIBU_PORTNO_BIT_OFFSET 5
 #define MALIBU_DEVNO_BIT_SEQ_OFFSET 0
+#define MALIBU_BYTE_COUNT_PER_TRANSACTION 14
 
 rc spi_32bit_read_write(hid_device* handle, uint8_t port_no, bool rd, /* (1=rd, 0=wr) */uint8_t dev, uint16_t reg_num, uint32_t *value) {
 
     PRINT_FUN();
 
-    uint8_t i = 0;
-    vsc85xx_spi_slave_inst_bit_seq_t bit_seq;
+  vsc85xx_spi_slave_inst_bit_seq_t bit_seq_1;
+  vsc85xx_spi_slave_inst_bit_seq_t bit_seq_2;
+  uint8_t bit_seq_all[7 * 2];
+  uint8_t spi_stat = 0x0; 
 
-    memset(&bit_seq, 0, sizeof(bit_seq));
-    
-    // Test Bit Sequence (Software test only)
-    bool sw_test = true;
-    if (sw_test) { 
-        // First Byte to Send is LSB.
-        bit_seq[0] = (rd << MALIBU_RW_BIT_OFFSET);
-        bit_seq[0] |= (port_no << MALIBU_PORTNO_BIT_OFFSET);
-        bit_seq[0] |= (dev << MALIBU_DEVNO_BIT_SEQ_OFFSET);
-        memcpy(&bit_seq[1], &reg_num, 2);
-        memcpy(&bit_seq[3], value, 4);
+  memset(&bit_seq_1, 0, sizeof(bit_seq_1));
+  memset(&bit_seq_2, 0, sizeof(bit_seq_2));
+  memset(&bit_seq_all, 0, sizeof(bit_seq_all));
 
-        // Verify in Terminal (Software Test)
-        for (size_t i = sizeof(bit_seq); i > 0; i--) {
-            printf("ptr_adr: %X, %02X \r\n", &bit_seq[i - 1], bit_seq[i - 1]);
-        }
-    }
-    
-    // Test using MCP2210 EVB and Logic Sal
-    bool hw_test = true; 
-    if (hw_test) {
-        // mcp2210-hidapi-spi initialization
-        mcp2210_spi_transfer_settings_t spi_cfg;
-        mcp2210_spi_get_transfer_settings(handle, &spi_cfg);
-        spi_cfg.bitrate = 3000000;
-        spi_cfg.active_cs_val = clear_bit(spi_cfg.active_cs_val, GP0); // Active Low
-        spi_cfg.idle_cs_val = set_bit(spi_cfg.active_cs_val, GP0); // Idle High
-        spi_cfg.cs_to_data_dly = 1; // assert - data out 100us
-        spi_cfg.last_data_byte_to_cs = 1; // de-assert - last data 100us
-        spi_cfg.dly_bw_subseq_data_byte = 1; // 100 us
-        spi_cfg.byte_to_tx_per_transact = sizeof(bit_seq);
-        spi_cfg.mode = SPI_MODE_0;
-        mcp2210_spi_set_transfer_settings(handle, spi_cfg);
+  uint32_t i;
+  // Read
+  if (read) {
+    // First Bit Sequence to Send.
+    bit_seq_1[0] = (0 << MALIBU_RW_BIT_OFFSET);
+    bit_seq_1[0] |= (port_no << MALIBU_PORTNO_BIT_OFFSET);
+    bit_seq_1[0] |= (dev << MALIBU_DEVNO_BIT_SEQ_OFFSET);
+    bit_seq_1[1] = (reg_num & 0xFF00) >> 8;
+    bit_seq_1[2] = (reg_num & 0x00FF);
+    //Don't Care "data" field
 
-        mcp2210_gpio_chip_settings_t gp_cfg;
-        mcp2210_gpio_get_current_chip_settings(handle, &gp_cfg);
-        gp_cfg.gp_pin_designation[0] = GP_FUNC_CHIP_SELECTS; // CS0
-        gp_cfg.spi_bus_release_disable = 0; // Released in each transfer
-        mcp2210_gpio_set_current_chip_settings(handle, gp_cfg);
+    // Second Bit Sequence to Send
+    // Note: Use DEV_ID address to prevent clearing "clear-on-read" registers (Page 158)
+    bit_seq_2[0] = (0 << MALIBU_RW_BIT_OFFSET);
+    bit_seq_2[0] |= (0x0000 << MALIBU_PORTNO_BIT_OFFSET);
+    bit_seq_2[0] |= (0x1E << MALIBU_DEVNO_BIT_SEQ_OFFSET);
+    bit_seq_2[1] = 0x00; // DEV_ID
+    bit_seq_2[2] = 0x00; // DEV_ID
+    //Don't Care "data" field
+  }
+  // Write
+  else {
+    // First Bit Sequence to Send.
+    bit_seq_1[0] = (1 << MALIBU_RW_BIT_OFFSET);
+    bit_seq_1[0] |= (port_no << MALIBU_PORTNO_BIT_OFFSET);
+    bit_seq_1[0] |= (dev << MALIBU_DEVNO_BIT_SEQ_OFFSET);
+    bit_seq_1[1] = (reg_num >> 8);
+    bit_seq_1[2] = (reg_num);
+    bit_seq_1[3] = (*value & 0xFF000000) >> 24;
+    bit_seq_1[4] = (*value & 0xFF0000) >> 16;
+    bit_seq_1[5] = (*value & 0xFF00) >> 8;
+    bit_seq_1[6] = (*value & 0xFF);
 
-        printf("Sending Test Bit Sequence: \r\n", sizeof(bit_seq));
-        uint8_t spi_stat = 0x0; 
-        while (spi_stat != 0x10) {
-            spi_stat = mcp2210_spi_transfer_data(handle, bit_seq, sizeof(bit_seq), bit_seq);
-            if (spi_stat == 0x20) {
-                printf(" USB In Progress wait for Data TX\r\n");
-                Sleep(1000); // 'S'leep is windows thing in ms.
-            }
-        };
+    // Second Bit Sequence to Send
+    // Note: Use DEV_ID address to prevent clearing "clear-on-read" registers (Page 158)
+    bit_seq_2[0] = (1 << MALIBU_RW_BIT_OFFSET);
+    bit_seq_2[0] |= (0x0000 << MALIBU_PORTNO_BIT_OFFSET);
+    bit_seq_2[0] |= (0x1E << MALIBU_DEVNO_BIT_SEQ_OFFSET);
+    bit_seq_2[1] = 0x00; // DEV_ID
+    bit_seq_2[2] = 0x00; // DEV_ID
+    //Don't Care "data" field
+  }
 
-        printf("Print Received Data\r\n", sizeof(bit_seq));
-        for (size_t i = sizeof(bit_seq); i > 0; i--) {
-            printf("ptr_adr: %X, %02X \r\n", &bit_seq[i - 1], bit_seq[i - 1]);
-        }
+  // Combine bit_seq_1 and bit_seq_2 to issue only one mcp2210_spi_transfer_data()
+  memcpy(&bit_seq_all, &bit_seq_1, sizeof(bit_seq_1));
+  memcpy(&bit_seq_all[7], &bit_seq_2, sizeof(bit_seq_2));
 
-        // Print Expected Return Value
-        printf("Should return model for a VSC 825x\r\n");
-    }
+  // Transmit Bit Sequences
+  while (spi_stat != 0x10) {
+      //Sent value is also being updated after received (byte_ptr_tx)
+    //   spi_stat = mcp2210_spi_transfer_data(handle, bit_seq_all, MALIBU_BYTE_COUNT_PER_TRANSACTION, bit_seq_all);
+  };
+  // Copy Byte offset 10 (Data in the 2nd Transaction) to value 
+  // regardless of operation
+  *value = bit_seq_all[10] << 24;
+  *value |= bit_seq_all[11] << 16;
+  *value |= bit_seq_all[12] << 8;
+  *value |= bit_seq_all[13];
 
-    return VTSS_RC_OK;
+  return VTSS_RC_OK;
 }
