@@ -10,9 +10,6 @@
 #include "mcp2210-hidapi-gpio.h"
 #include "mcp2210-hidapi-spi.h"
 
-// For Testing PHY Register Access Only
-#include "hidapi_mesa_connector.c"
-
 // Main Test Code
 int main(int argc, char* argv[]) {
 	int res;
@@ -35,45 +32,33 @@ int main(int argc, char* argv[]) {
 
 	// Examples
 	{
-		// // Read the Manufacturer String
-		// res = hid_get_manufacturer_string(handle, wstr, MAX_STR);
-		// printf("Manufacturer String: %ls\n", wstr);
+		// Read the Manufacturer String
+		res = hid_get_manufacturer_string(handle, wstr, MAX_STR);
+		printf("Manufacturer String: %ls\n", wstr);
 
-		// // Read the Product String
-		// res = hid_get_product_string(handle, wstr, MAX_STR);
-		// printf("Product String: %ls\n", wstr);
+		// Read the Product String
+		res = hid_get_product_string(handle, wstr, MAX_STR);
+		printf("Product String: %ls\n", wstr);
 
-		// // Read the Serial Number String
-		// res = hid_get_serial_number_string(handle, wstr, MAX_STR);
-		// printf("Serial Number String: (%d) %ls\n", wstr[0], wstr);
+		// Read the Serial Number String
+		res = hid_get_serial_number_string(handle, wstr, MAX_STR);
+		printf("Serial Number String: (%d) %ls\n", wstr[0], wstr);
 
-		// // Read Indexed String 1
-		// res = hid_get_indexed_string(handle, 1, wstr, MAX_STR);
-		// printf("Indexed String 1: %ls\n", wstr);
+		// Read Indexed String 1
+		res = hid_get_indexed_string(handle, 1, wstr, MAX_STR);
+		printf("Indexed String 1: %ls\n", wstr);
 
-		// // Setup a transfer and transmit a data
-		// spi_transfer_example(handle);
+		// Setup a transfer and transmit a data
+		spi_transfer_example(handle);
 
-		// spi_get_examples(handle); // example get/read SPI command/response
-		// spi_set_examples(handle); // example set/write SPI command/response
+		spi_get_examples(handle); // example get/read SPI command/response
+		spi_set_examples(handle); // example set/write SPI command/response
 
-		// gpio_get_examples(handle); // example get/read GPIO command/response
-		// gpio_set_examples(handle); // example set/write GPIO command/response
+		gpio_get_examples(handle); // example get/read GPIO command/response
+		gpio_set_examples(handle); // example set/write GPIO command/response
 
 	} 
 	// End of Examples
-
-	/* MESA Connector VSC8528 Pre-testing
-	 * This section was added to test HID API with MESA. It should only contain the connector/HAL
-	 */
-	{
-		uint32_t val = 0xAAAAAAAA;
-		uint16_t reg = 0x5555;
-		uint8_t dev = 0x1E;
-		uint8_t rw = 0b1;
-		uint8_t port = 0b10;
-		spi_32bit_read_write(handle, port, rw, dev, reg, &val);
-	}
 
 	// Close the device
 	hid_close(handle);
