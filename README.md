@@ -9,11 +9,6 @@ This project  uses HIDAPI for portability between Linux and Windows.
 &nbsp;  &nbsp;  &nbsp; &nbsp;&nbsp;  &nbsp;  &nbsp; &nbsp; select "All" and "Yes" 
 
 - HIDAPI Version: hidapi-0.14.0 (https://github.com/libusb/hidapi/releases/tag/hidapi-0.14.0)
- \
- \
-Before doing anything, initialize submodule. (https://github.com/joemdiente/mesa)
-     - git submodule init
-     - git submodule update
 
 ## Building in Windows ##
     ### Using Make ###
