@@ -1,3 +1,9 @@
+/* 
+ * MCP2210 HIDAPI Test Code
+ *
+ * Author: Joemel John Diente <joemdiente@gmail.com>
+ * 
+ */
 #include "hidapi.h"
 
 #include <stdio.h> // printf
