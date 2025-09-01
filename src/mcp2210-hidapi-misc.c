@@ -46,7 +46,8 @@ void split_uint16_to_uint8_le(uint16_t value, uint8_t*byte0, uint8_t* byte1) {
 
 //nl means newline
 void print_bits_nl(uint8_t byte) {
-	for (int i = 7; i >= 0; i--) {
+    int i = 0;
+	for (i = 7; i >= 0; i--) {
 		// Extract the i-th bit using bitwise AND and right shift
 		int bit = (byte >> i) & 1;
 		printf("%d", bit);
