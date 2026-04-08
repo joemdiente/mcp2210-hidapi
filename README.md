@@ -1,3 +1,4 @@
+![Microchip Technology Inc.](docs/microchip_logo.png)
 # Example C code for using MCP2210 with HIDAPI #
 
 This project  uses HIDAPI for portability between Linux and Windows. 
@@ -31,9 +32,9 @@ This project  uses HIDAPI for portability between Linux and Windows.
 
 ## Building in Linux ##
     ### Using Make ###
-    1. TBD
+    1. TBD - Not yet building on Linux
 
     ### Using CMake ###
-    1. TBD
+    1. TBD - Not yet building on Linux
 
 

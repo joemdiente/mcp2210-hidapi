@@ -1,7 +1,20 @@
 /* 
  * MCP2210 C SPI Source
  *
- * Author: Joemel John Diente <joemdiente@gmail.com>
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; If not, see <https://www.gnu.org/licenses/>.
+ * 
+ * Author: Joemel John Diente <JoemelJohn.Diente@microchip.com>
  * 
  */
 
@@ -19,15 +32,17 @@ int mcp2210_spi_get_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 	int res = -1;
 		
 	PRINT_FUN();
-	 
+
 	if (cfg == NULL || handle == NULL) {
 		res = -EINVAL;
 		PRINT_RES("Invalid pointer", res);
+		return res;
 	}
+
 	// COMMAND Structure 
 	memset(cmd_buf, 0, 65);
 	cmd_buf[0] = 0x00;
-	cmd_buf[1] = 0x41; // 3.2.1 GET (VM) SPI TRANSFER SETTINGS 
+	cmd_buf[1] = 0x41; // 3.2.1 GET (VM) SPI TRANSFER SETTINGS
 	res = hid_write(handle, cmd_buf, 65);
 
 	res = hid_read(handle, rsp_buf, 65);
@@ -62,6 +77,12 @@ int mcp2210_spi_set_transfer_settings(hid_device *handle, mcp2210_spi_transfer_s
 	int res = -1;
 		
 	PRINT_FUN();
+
+	if (handle == NULL) {
+		res = -EINVAL;
+		PRINT_RES("Invalid pointer", res);
+		return res;
+	}
 
 	// COMMAND Structure 
 	memset(cmd_buf, 0, 65);
@@ -115,6 +136,12 @@ int mcp2210_spi_transfer_data(hid_device *handle, uint8_t* tx_data, size_t tx_si
 	int rx_size = 0; //Note: this is RX size received from the device. Should be always less than spi_transfer_size
 	PRINT_FUN();
 	 
+	if (handle == NULL) {
+		res = -EINVAL;
+		PRINT_RES("Invalid pointer", res);
+		return res;
+	}
+
 	if (tx_data == NULL || rx_data == NULL || handle == NULL) {
 		res = -EINVAL;
 		PRINT_RES("Invalid pointer", res);
@@ -194,6 +221,12 @@ int mcp2210_spi_cancel_transfer(hid_device *handle, mcp2210_status_t *status) {
 	
 	PRINT_FUN();
 
+	if (handle == NULL) {
+		res = -EINVAL;
+		PRINT_RES("Invalid pointer", res);
+		return res;
+	}
+
 	// COMMAND Structure 
 	memset(cmd_buf, 0, 65);
 	cmd_buf[0] = 0x00;
@@ -224,6 +257,13 @@ int mcp2210_spi_request_bus_release(hid_device *handle) {
 	int res = -1;
 	
 	PRINT_FUN();
+
+	if (handle == NULL) {
+		res = -EINVAL;
+		PRINT_RES("Invalid pointer", res);
+		return res;
+	}
+
 	// Note: only if SPI BUS request pin (GP8 is used)
 	// COMMAND Structure 
 	memset(cmd_buf, 0, 65);
